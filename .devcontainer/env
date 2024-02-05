@@ -1,0 +1,8 @@
+CERTS="$(pwd)/certs"
+SUFFIX="hubs-1.vevv.io"
+
+SOURCE=(
+    SSL_CERT_FILE="$CERTS/vevv.io_202303247.unified.crt.pem"
+    SSL_KEY_FILE="$CERTS/vevv.io_202303247.key.pem"
+    HUBS_HOST="${SUFFIX}"
+)
