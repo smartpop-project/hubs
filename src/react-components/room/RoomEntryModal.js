@@ -30,13 +30,11 @@ export function RoomEntryModal({
   const breakpoint = useCssBreakpoints();
 
   React.useEffect(() => {
-    if (prevState.avatar !== this.state.avatar) {
-      const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");
-      const isBot = funcs?.some(str => str === "bot");
+    const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");
+    const isBot = funcs?.some(str => str === "bot");
 
-      if (isBot) {
-        onJoinRoom();
-      }
+    if (isBot) {
+      onJoinRoom();
     }
   }
     , []);
