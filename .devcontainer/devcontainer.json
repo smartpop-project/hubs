@@ -20,12 +20,10 @@
         "--name",
         "${containerWorkspaceFolderBasename}-vscode"
     ],
-    "initializeCommand": "docker rm -f client admin",
-    "postCreateCommand": "npm ci && npm ci --prefix admin",
+    "initializeCommand": "docker rm -f client",
+    "postCreateCommand": "npm ci",
     "appPort": [
         // hubs
-        "0.0.0.0:8080:8080",
-        // admin
-        "0.0.0.0:8989:8989"
+        "0.0.0.0:8080:8080"
     ]
 }
