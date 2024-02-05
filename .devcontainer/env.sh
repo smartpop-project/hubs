@@ -2,7 +2,7 @@
 set -ex
 THISDIR=$(pwd)
 
-source env
+source ./env
 
 array_length=${#SOURCE[@]}
 

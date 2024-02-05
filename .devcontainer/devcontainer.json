@@ -21,7 +21,7 @@
         "${containerWorkspaceFolderBasename}-vscode"
     ],
     "initializeCommand": "docker rm -f client",
-    "postCreateCommand": "npm ci",
+    "postCreateCommand": "npm i",
     "appPort": [
         // hubs
         "0.0.0.0:8080:8080"
