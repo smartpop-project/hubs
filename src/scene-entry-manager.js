@@ -27,6 +27,7 @@ import { MyCameraTool } from "./bit-components";
 import { anyEntityWith, shouldUseNewLoader } from "./utils/bit-utils";
 import { moveToSpawnPoint } from "./bit-systems/waypoint";
 import { spawnFromFileList, spawnFromUrl } from "./load-media-on-paste-or-drop";
+import { setScaleFromSharedScreen, getSharedScreen, setPinned } from "./belivvr/sharedScreen";
 import { isLockedDownDemoRoom } from "./utils/hub-utils";
 
 export default class SceneEntryManager {
@@ -224,7 +225,9 @@ export default class SceneEntryManager {
     // HACK we only care about the return value in 1 spot, don't want to deal with that in the newLoader path
     const spawnMediaInfrontOfPlayerAndReturn = (src, contentOrigin) => {
       if (!this.hubChannel.can("spawn_and_move_media")) return;
-      const offset = { x: 0, y: 0, z: -1.5 };
+
+      const { sharedScreen, offset, target } = getSharedScreen(src);
+
       const { entity, orientation } = addMedia(
         src,
         "#interactable-media",
@@ -235,10 +238,17 @@ export default class SceneEntryManager {
       );
       orientation.then(or => {
         entity.setAttribute("offset-relative-to", {
-          target: "#avatar-pov-node",
+          target,
           offset,
           orientation: or
         });
+
+        if (sharedScreen === null) {
+          return;
+        }
+
+        setScaleFromSharedScreen(entity, sharedScreen);
+        setPinned(entity);
       });
 
       return entity;
@@ -260,6 +270,19 @@ export default class SceneEntryManager {
         spawnMediaInfrontOfPlayerAndReturn(src, contentOrigin);
       }
     };
+
+    this.scene.addEventListener("action_share_screen_client", ({ detail: { clientId } }) => {
+      /**
+       * belivvr custom
+       * share-screen-button (사용안함)
+       * action_share_screen_client 가 트리거되면 화면공유가 됨.
+       */
+      this.performConditionalSignIn(
+        () => this.hubChannel.can("share_screen"),
+        async () => await window.APP.hubChannel.shareScreen(clientId),
+        SignInMessages.shareScreen
+      );
+    });
 
     this.scene.addEventListener("add_media", e => {
       const contentOrigin = e.detail instanceof File ? ObjectContentOrigins.FILE : ObjectContentOrigins.URL;

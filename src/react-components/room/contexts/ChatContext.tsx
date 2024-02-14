@@ -82,6 +82,7 @@ function updateMessageGroups(messageGroups: any[], newMessage: NewMessageT) {
     case "hub_name_changed":
     case "hub_changed":
     case "log":
+    case "operator_notice":
       return [
         ...messageGroups,
         {

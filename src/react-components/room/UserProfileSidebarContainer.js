@@ -31,7 +31,13 @@ export function UserProfileSidebarContainer({
   const isSignedIn = !!roles.signed_in;
   const mayAddOwner = hubChannel.canOrWillIfCreator("update_roles") && !isOwner && !isCreator;
   const mayRemoveOwner = hubChannel.canOrWillIfCreator("update_roles") && isOwner && !isCreator;
+  const mayShare = hubChannel.canOrWillIfCreator("grant_share_screen");
+  const mayApplyMute = hubChannel.canOrWillIfCreator("apply_mute");
+  const mayFreeze = hubChannel.canOrWillIfCreator("freeze");
   const [isHidden, setIsHidden] = useState(hubChannel.isHidden(user.id));
+  const [isShareScreen, setIsShareScreen] = useState(hubChannel.isShareScreen(user.id));
+  const [isMute, setIsMute] = useState(hubChannel.isMute(user.id));
+  const [isFreeze, setIsFreeze] = useState(hubChannel.isFreeze(user.id));
 
   useEffect(() => {
     if (avatarId) {
@@ -99,6 +105,48 @@ export function UserProfileSidebarContainer({
     }
   }, [performConditionalSignIn, hubChannel, userId, onClose, onBack]);
 
+  /**
+   * belivvr custom
+   * 움직임 제어 토글 함수 추가
+   */
+  const toggleFreeze = useCallback(() => {
+    if (isFreeze) {
+      hubChannel.unfreeze(userId);
+    } else {
+      hubChannel.freeze(userId);
+    }
+
+    setIsFreeze(!isFreeze);
+  }, [isFreeze, userId, hubChannel]);
+
+  /**
+   * belivvr custom
+   * 화면공유 권한 부여 토글 함수 추가
+   */
+  const toggleShareScreen = useCallback(() => {
+    if (isShareScreen) {
+      hubChannel.revokeShareScreen(userId);
+    } else {
+      hubChannel.grantShareScreen(userId);
+    }
+
+    setIsShareScreen(!isShareScreen);
+  }, [isShareScreen, userId, hubChannel]);
+
+  /**
+   * belivvr custom
+   * 음소거 토글 함수 추가
+   */
+  const toggleMute = useCallback(() => {
+    if (isMute) {
+      hubChannel.cancelMute(userId);
+    } else {
+      hubChannel.applyMute(userId);
+    }
+
+    setIsMute(!isMute);
+  }, [isMute, userId, hubChannel]);
+
   return (
     <UserProfileSidebar
       userId={user.id}
@@ -114,6 +162,7 @@ export function UserProfileSidebarContainer({
       isHidden={isHidden}
       onToggleHidden={toggleHidden}
       canMute={mayMute}
+      onToggleMute={toggleMute}
       isNetworkMuted={isNetworkMuted}
       onMute={mute}
       canKick={mayKick}
@@ -122,6 +171,14 @@ export function UserProfileSidebarContainer({
       onClose={onClose}
       onBack={onBack}
       hasMicPresence={hasMicPresence}
+      canShare={mayShare}
+      onToggleShareScreen={toggleShareScreen}
+      canApplyMute={mayApplyMute}
+      canFreeze={mayFreeze}
+      onToggleFreeze={toggleFreeze}
+      isShare={isShareScreen}
+      isMute={isMute}
+      isFreeze={isFreeze}
     />
   );
 }
@@ -134,5 +191,7 @@ UserProfileSidebarContainer.propTypes = {
   onBack: PropTypes.func,
   onClose: PropTypes.func,
   onCloseDialog: PropTypes.func.isRequired,
-  showNonHistoriedDialog: PropTypes.func
+  showNonHistoriedDialog: PropTypes.func,
+  people: PropTypes.array,
+  setPeople: PropTypes.func
 };

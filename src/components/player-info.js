@@ -3,7 +3,8 @@ import { AVATAR_TYPES } from "../utils/avatar-utils";
 import { registerComponentInstance, deregisterComponentInstance } from "../utils/component-utils";
 import defaultAvatar from "../assets/models/DefaultAvatar.glb";
 import { MediaDevicesEvents } from "../utils/media-devices-utils";
-import { createHeadlessModelForSkinnedMesh } from "../utils/three-utils";
+// import { createHeadlessModelForSkinnedMesh } from "../utils/three-utils";
+import { createModelForSkinnedMesh } from "../utils/three-utils";
 import { Layers } from "../camera-layers";
 import { addComponent, removeComponent } from "bitecs";
 import { LocalAvatar, RemoteAvatar } from "../bit-components";
@@ -30,6 +31,13 @@ function ensureAvatarNodes(json) {
     nodes.push({ name: "AvatarRoot", children: [nodes.length - 1] });
     json.scenes[json.scene].nodes[0] = nodes.length - 1;
   }
+
+  nodes.filter(node => {
+    if (node.name === "Neck") node.extensions = { MOZ_hubs_components: { "scale-audio-feedback": "" } };
+    if (node.name === "LeftEye") node.extensions = { MOZ_hubs_components: { "scale-audio-feedback": "" } };
+    if (node.name === "RightEye") node.extensions = { MOZ_hubs_components: { "scale-audio-feedback": "" } };
+  });
+
   return json;
 }
 
@@ -83,10 +91,21 @@ AFRAME.registerComponent("player-info", {
       let isSkinnedAvatar = false;
       modelEl.object3D.traverse(function (o) {
         if (o.isSkinnedMesh) {
-          const headlessMesh = createHeadlessModelForSkinnedMesh(o);
-          if (headlessMesh) {
+          /**
+           * belivvr custom
+           * 3인칭을 위해 머리가 있는 아바타를 만듬
+           * 기존에는 1인칭만 존재하여 나의 머리를 볼 필요가 없었다.
+           * 허나 3인칭시에는 머리가 존재해야하므로 추가함.
+           */
+          // const headlessMesh = createHeadlessModelForSkinnedMesh(o);
+          // if (headlessMesh) {
+          //   isSkinnedAvatar = true;
+          //   o.parent.add(headlessMesh);
+          // }
+          const mesh = createModelForSkinnedMesh(o);
+          if (mesh) {
             isSkinnedAvatar = true;
-            o.parent.add(headlessMesh);
+            o.parent.add(mesh);
           }
         }
       });

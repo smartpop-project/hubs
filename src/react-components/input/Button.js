@@ -5,6 +5,10 @@ import styles from "./Button.scss";
 import textInputStyles from "./TextInput.scss";
 import { FormattedMessage } from "react-intl";
 
+/**
+ * belivvr custom
+ * 커스텀 버튼 "belivvr-accept", "belivvr-cancel" 추가
+ */
 export const presets = [
   "transparent",
   "basic",
@@ -19,7 +23,9 @@ export const presets = [
   "accent6",
   "landing",
   "signin",
-  "text"
+  "text",
+  "belivvr-accept",
+  "belivvr-cancel"
 ];
 
 /* eslint-disable-next-line react/display-name */

@@ -4,13 +4,14 @@ import Cookies from "js-cookie";
 import jwtDecode from "jwt-decode";
 import { qsGet } from "../utils/qs_truthy.js";
 import detectMobile, { isAndroid, isMobileVR } from "../utils/is-mobile";
+import configs from "../utils/configs.js";
 
 const LOCAL_STORE_KEY = "___hubs_store";
 const STORE_STATE_CACHE_KEY = Symbol();
 const OAUTH_FLOW_CREDENTIALS_KEY = "ret-oauth-flow-account-credentials";
 const validator = new Validator();
 import { EventTarget } from "event-target-shim";
-import { fetchRandomDefaultAvatarId, generateRandomName } from "../utils/identity.js";
+import { fetchRandomDefaultAvatarId } from "../utils/identity.js";
 import { NO_DEVICE_ID } from "../utils/media-devices-utils.js";
 import { AAModes } from "../constants";
 
@@ -63,9 +64,10 @@ export const SCHEMA = {
       type: "object",
       additionalProperties: false,
       properties: {
-        displayName: { type: "string", pattern: "^[A-Za-z0-9_~\\s\\-]{3,32}$" },
+        //displayName: { type: "string", pattern: "^[A-Za-z0-9_~ -]{3,32}$" },
+        displayName: { type: "string", pattern: "^[가-힣A-Za-z0-9_~ -]{1,32}$" },
         avatarId: { type: "string" },
-        pronouns: { type: "string", pattern: "^([a-zA-Z]{1,32}\\/){0,4}[a-zA-Z]{1,32}$" },
+        pronouns: { type: "string", pattern: "^[a-zA-Z///a-zA-Z]{2,32}$" },
         // personalAvatarId is obsolete, but we need it here for backwards compatibility.
         personalAvatarId: { type: "string" }
       }
@@ -311,18 +313,32 @@ export default class Store extends EventTarget {
   };
 
   initProfile = async () => {
-    if (this._shouldResetAvatarOnInit) {
-      await this.resetToRandomDefaultAvatar();
+    /**
+     * belivvr custom
+     * ?token= 과 같이 "token" 쿼리스트링이 있을경우 해당 닉네임과 아바타를 가져와서 보여줌
+     * 없을 경우에 기본 전남대 아바타를 보여줌(full-body일 경우)
+     * full-body가 아닌 경우 박스 캐릭터를 보여줌
+     */
+    const qs = new URLSearchParams(location.search);
+    let displayName = '';
+    let avatarUrl = '';
+
+    if (qs.has("displayName")) {
+      displayName = qs.get("displayName");
     } else {
-      this.update({
-        profile: { avatarId: await fetchRandomDefaultAvatarId(), ...(this.state.profile || {}) }
-      });
+      displayName = "손님";
     }
 
-    // Regenerate name to encourage users to change it.
-    if (!this.state.activity.hasChangedNameOrPronouns) {
-      this.update({ profile: { displayName: generateRandomName() } });
+    if (qs.has("avatarUrl")) {
+      avatarUrl = `https://${configs.CORS_PROXY_SERVER}/${qs.get("avatarUrl")}`
+    } else {
+        avatarUrl = await fetchRandomDefaultAvatarId();
     }
+
+    console.log(`displayName=${displayName}`);
+    console.log(`avatarUrl=${avatarUrl}`);
+
+    this.update({ profile: { avatarId: avatarUrl, displayName: displayName } });
   };
 
   resetToRandomDefaultAvatar = async () => {

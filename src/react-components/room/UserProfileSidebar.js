@@ -40,6 +40,15 @@ export function UserProfileSidebar({
   showBackButton,
   onBack,
   onClose,
+  canShare,
+  onToggleShareScreen,
+  canApplyMute,
+  onToggleMute,
+  canFreeze,
+  onToggleFreeze,
+  isShare,
+  isMute,
+  isFreeze,
   ...rest
 }) {
   const intl = useIntl();
@@ -51,6 +60,10 @@ export function UserProfileSidebar({
     [updateMultiplier]
   );
   const newLevel = calcLevel(multiplier);
+  const qsFuncs = new URLSearchParams(location.search).get("funcs")?.split(",");
+  const funcsIsShareScreen = qsFuncs?.some(str => str === "share-screen");
+  const funcsIsMute = qsFuncs?.some(str => str === "mute");
+  const funcsIsFreeze = qsFuncs?.some(str => str === "freeze");
 
   return (
     <Sidebar
@@ -85,63 +98,152 @@ export function UserProfileSidebar({
             />
           </div>
         )}
-        {canPromote && (
-          <Button
-            preset="accept"
-            disabled={!isSignedIn}
-            title={
-              isSignedIn
-                ? intl.formatMessage({ id: "user-profile-sidebar.promote-button", defaultMessage: "Promote" })
-                : intl.formatMessage(
-                    {
-                      id: "user-profile-sidebar.promote-button-disabled-label",
-                      defaultMessage: "{displayName} is signed out."
-                    },
-                    { displayName }
-                  )
-            }
-            onClick={onPromote}
-          >
-            <FormattedMessage id="user-profile-sidebar.promote-button" defaultMessage="Promote" />
-          </Button>
-        )}
-        {canDemote && (
-          <Button
-            preset="cancel"
-            disabled={!isSignedIn}
-            title={
-              isSignedIn
-                ? intl.formatMessage({ id: "user-profile-sidebar.demote-button", defaultMessage: "Demote" })
-                : intl.formatMessage(
-                    {
-                      id: "user-profile-sidebar.demote-button-disabled-label",
-                      defaultMessage: "{displayName} is signed out."
-                    },
-                    { displayName }
-                  )
-            }
-            onClick={onDemote}
-          >
-            <FormattedMessage id="user-profile-sidebar.demote-button" defaultMessage="Demote" />
-          </Button>
-        )}
-        <Button onClick={onToggleHidden}>
-          {isHidden ? (
-            <FormattedMessage id="user-profile-sidebar.unhide-button" defaultMessage="Unhide" />
-          ) : (
-            <FormattedMessage id="user-profile-sidebar.hide-button" defaultMessage="Hide" />
+        {
+          /**
+           * belivvr custom
+           * 관리자 권한 부여 및 회수 버튼 삭제
+           */
+          /* {canPromote && (
+            <Button
+              preset="accept"
+              disabled={!isSignedIn}
+              title={
+                isSignedIn
+                  ? intl.formatMessage({ id: "user-profile-sidebar.promote-button", defaultMessage: "Promote" })
+                  : intl.formatMessage(
+                      {
+                        id: "user-profile-sidebar.promote-button-disabled-label",
+                        defaultMessage: "{displayName} is signed out."
+                      },
+                      { displayName }
+                    )
+              }
+              onClick={onPromote}
+            >
+              <FormattedMessage id="user-profile-sidebar.promote-button" defaultMessage="Promote" />
+            </Button>
           )}
-        </Button>
-        {canMute && (
-          <Button preset="cancel" onClick={onMute}>
-            <FormattedMessage id="user-profile-sidebar.mute-button" defaultMessage="Mute" />
-          </Button>
-        )}
-        {canKick && (
-          <Button preset="cancel" onClick={onKick}>
-            <FormattedMessage id="user-profile-sidebar.kick-button" defaultMessage="Kick" />
-          </Button>
-        )}
+          {canDemote && (
+            <Button
+              preset="cancel"
+              disabled={!isSignedIn}
+              title={
+                isSignedIn
+                  ? intl.formatMessage({ id: "user-profile-sidebar.demote-button", defaultMessage: "Demote" })
+                  : intl.formatMessage(
+                      {
+                        id: "user-profile-sidebar.demote-button-disabled-label",
+                        defaultMessage: "{displayName} is signed out."
+                      },
+                      { displayName }
+                    )
+              }
+              onClick={onDemote}
+            >
+              <FormattedMessage id="user-profile-sidebar.demote-button" defaultMessage="Demote" />
+            </Button>
+          )} */
+        }
+        {
+          /**
+           * belivvr custom
+           * 유저 숨기기 버튼 삭제
+           */
+          /* <Button onClick={onToggleHidden}>
+            {isHidden ? (
+              <FormattedMessage id="user-profile-sidebar.unhide-button" defaultMessage="Unhide" />
+            ) : (
+              <FormattedMessage id="user-profile-sidebar.hide-button" defaultMessage="Hide" />
+            )}
+          </Button> */
+        }
+        {
+          /**
+           * belivvr custom
+           * 유저 음소거 버튼 삭제
+           * 해당 음소거 버튼은 나에게만 안들리고 다른 사람에게는 여전히 들린다.
+           * 따라서 아래에 새로 음소거 기능을 만들어 추가함.
+           */
+          /* {canMute && (
+            <Button preset="cancel" onClick={onMute}>
+              <FormattedMessage id="user-profile-sidebar.mute-button" defaultMessage="Mute" />
+            </Button>
+          )} */
+        }
+        {
+          /**
+           * belivvr custom
+           * 방장인 경우 강퇴 버튼 추가
+           */
+          canKick && (
+            <Button preset="belivvr-accept" onClick={onKick}>
+              <FormattedMessage id="user-profile-sidebar.kick-button" defaultMessage="Kick" />
+            </Button>
+          )
+        }
+        {
+          /**
+           * belivvr custom
+           * funcs=share-screen 이 있는 경우이자 방장인 경우에는 화면공유 권한 부여 및 회수 버튼 추가
+           */
+          canShare && funcsIsShareScreen && (
+            <>
+              {isShare ? (
+                <Button preset="belivvr-cancel" onClick={onToggleShareScreen}>
+                  <FormattedMessage
+                    id="user-profile-sidebar.revoke-share-screen-button"
+                    defaultMessage="Revoke Screen Sharing"
+                  />
+                </Button>
+              ) : (
+                <Button preset="belivvr-accept" onClick={onToggleShareScreen}>
+                  <FormattedMessage
+                    id="user-profile-sidebar.grant-share-screen-button"
+                    defaultMessage="Grant Screen Sharing"
+                  />
+                </Button>
+              )}
+            </>
+          )
+        }
+        {
+          /**
+           * belivvr custom
+           * funcs=mute 이 있는 경우이자 방장인 경우 유저 음소거 기능 추가
+           */
+          canApplyMute && funcsIsMute && (
+            <>
+              {isMute ? (
+                <Button preset="belivvr-cancel" onClick={onToggleMute}>
+                  <FormattedMessage id="user-profile-sidebar.cancel-mute-button" defaultMessage="Cancel muted user" />
+                </Button>
+              ) : (
+                <Button preset="belivvr-accept" onClick={onToggleMute}>
+                  <FormattedMessage id="user-profile-sidebar.apply-mute-button" defaultMessage="Mute user" />
+                </Button>
+              )}
+            </>
+          )
+        }
+        {
+          /**
+           * belivvr custom
+           * funcs=freeze 이 있는 경우이자 방장인 경우에 유저 움직임 제어 기능 추가
+           */
+          canFreeze && funcsIsFreeze && (
+            <>
+              {isFreeze ? (
+                <Button preset="belivvr-cancel" onClick={onToggleFreeze}>
+                  <FormattedMessage id="user-profile-sidebar.unfreeze-button" defaultMessage="Unfreeze user" />
+                </Button>
+              ) : (
+                <Button preset="belivvr-accept" onClick={onToggleFreeze}>
+                  <FormattedMessage id="user-profile-sidebar.freeze-button" defaultMessage="Freeze user" />
+                </Button>
+              )}
+            </>
+          )
+        }
       </Column>
     </Sidebar>
   );
@@ -169,5 +271,15 @@ UserProfileSidebar.propTypes = {
   onKick: PropTypes.func,
   showBackButton: PropTypes.bool,
   onBack: PropTypes.func,
-  onClose: PropTypes.func
+  onCancelMute: PropTypes.func,
+  onClose: PropTypes.func,
+  canShare: PropTypes.bool,
+  onToggleShareScreen: PropTypes.func,
+  canApplyMute: PropTypes.bool,
+  onToggleMute: PropTypes.func,
+  canFreeze: PropTypes.bool,
+  onToggleFreeze: PropTypes.func,
+  isShare: PropTypes.bool,
+  isMute: PropTypes.bool,
+  isFreeze: PropTypes.bool
 };

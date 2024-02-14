@@ -203,6 +203,29 @@ AFRAME.registerSystem("userinput", {
   },
 
   init() {
+    /**
+     * belivvr custom
+     * freeze 이벤트가 트리거 되면
+     * 텔레포트를 막음, 키보드 제거함
+     */
+    window.addEventListener("freeze", () => {
+      window.APP.store.state.preferences.disableTeleporter = true;
+      if (!this.tempItems) this.tempItems = [...this.activeDevices.items];
+      this.activeDevices.items.length = 0;
+      this.activeDevices.items =
+       [...this.tempItems.filter(
+        item => item instanceof MouseDevice 
+        || item instanceof AppAwareMouseDevice 
+        || item instanceof AppAwareTouchscreenDevice
+        )];
+    });
+
+    window.addEventListener("unfreeze", () => {
+      window.APP.store.state.preferences.disableTeleporter = false;
+      if (this.tempItems) this.activeDevices.items = [...this.tempItems];
+      return;
+    });
+
     this.frame = {
       generation: 0,
       values: {},

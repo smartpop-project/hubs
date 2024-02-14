@@ -17,7 +17,14 @@ let isAdmin = false;
   "GA_TRACKING_ID",
   "SHORTLINK_DOMAIN",
   "BASE_ASSETS_PATH",
-  "UPLOADS_HOST"
+  "UPLOADS_HOST",
+  /**
+  * belivvr custom
+  * .env 추가
+  */
+  "CNUMETA_JNU",
+  "NCLOUD",
+  "BACKEND_URL"
 ].forEach(x => {
   const el = document.querySelector(`meta[name='env:${x.toLowerCase()}']`);
   configs[x] = el ? el.getAttribute("content") : process.env[x];

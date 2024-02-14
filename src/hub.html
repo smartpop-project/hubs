@@ -184,6 +184,17 @@
                                             <a-entity text="value:Kick; textAlign:center;" text-raycast-hack
                                                 visible-if-permitted="kick_users" position="0 0 0.001"></a-entity>
                                         </a-entity>
+                                        <!--
+                                            belivvr custom
+                                            화면공유 버튼을 위한 엔티티 추가 (삭제가능)
+                                        -->
+                                        <a-entity is-remote-hover-target tags="singleActionButton:true;"
+                                            mixin="rounded-text-button" visible-if-permitted="grant_share_screen"
+                                            share-screen-button position="0 -0.5 .35" scale="0.8 0.8 0.8">
+                                            <a-entity text="value:ShareScreen; textAlign:center;" text-raycast-hack
+                                                visible-if-permitted="grant_share_screen"
+                                                position="0 0 0.001"></a-entity>
+                                        </a-entity>
                                         <a-entity is-remote-hover-target tags="singleActionButton:true;"
                                             mixin="rounded-text-button"
                                             camera-focus-button="track: false; selector: .Head;"
@@ -603,6 +614,16 @@
                 </a-entity>
             </template>
 
+            <template id="inline-hover-menu">
+                <a-entity id="inline-wrapper" class="ui interactable-ui hover-container" visible="false">
+                    <a-entity id="inline-frame-button" mixin="rounded-text-action-button ui" is-remote-hover-target
+                        tags="singleActionButton: true; isHoverMenuChild: true;"
+                        inline-frame-button="src:''; frameOption:'';" position="0 0 0.001">
+                        <a-entity text="value:open link; textAlign:center;" text-raycast-hack
+                            position="0 0 0.02"></a-entity>
+                    </a-entity>
+                </a-entity>
+            </template>
             <template id="photo-hover-menu">
                 <a-entity class="ui interactable-ui hover-container" visible="false">
                     <a-entity mixin="rounded-twitter-text-action-button ui" is-remote-hover-target

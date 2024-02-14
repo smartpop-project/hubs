@@ -20,6 +20,7 @@ export function AvatarSettingsContent({
   onChangeAvatar,
   ...rest
 }) {
+  const canAvatarChange = new URLSearchParams(location.search).get("funcs")?.split(",").some(str => str === "avatar-changeable");
   return (
     <Column as="form" className={styles.content} {...rest}>
       <TextInputField
@@ -38,19 +39,33 @@ export function AvatarSettingsContent({
         }
         ref={displayNameInputRef}
       />
-      <TextInputField
+      {
+        /**
+         * belivvr custom
+         * 별칭의 개념이 있는 것 같아서 닉네임과 겹친다 판단하고 빼버림
+         */
+      }
+      {/* <TextInputField
         label={<FormattedMessage id="avatar-settings-content.pronouns-label" defaultMessage="Pronouns (optional)" />}
         value={pronouns}
         pattern={pronounsPattern}
         spellCheck="false"
         onChange={onChangePronouns}
         ref={pronounsInputRef}
-      />
+      /> */}
       <div className={styles.avatarPreviewContainer}>
         {avatarPreview || <div />}
-        <Button type="button" preset="basic" onClick={onChangeAvatar}>
-          <FormattedMessage id="avatar-settings-content.change-avatar-button" defaultMessage="Change Avatar" />
-        </Button>
+        {
+          /**
+           * belivvr custom
+           * funcs=avatar-changeable 일 경우에는 아바타 변경이 가능함
+           */
+          canAvatarChange && (
+            <Button type="button" preset="basic" onClick={onChangeAvatar}>
+              <FormattedMessage id="avatar-settings-content.change-avatar-button" defaultMessage="Change Avatar" />
+            </Button>
+          )
+        }
       </div>
       <AcceptButton preset="accept" type="submit" />
     </Column>

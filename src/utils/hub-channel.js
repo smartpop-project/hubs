@@ -23,6 +23,9 @@ const HUB_CREATOR_PERMISSIONS = [
   "close_hub",
   "mute_users",
   "kick_users",
+  "grant_share_screen",
+  "apply_mute",
+  "freeze",
   "amplify_audio"
 ];
 const VALID_PERMISSIONS = HUB_CREATOR_PERMISSIONS.concat([
@@ -45,6 +48,14 @@ export default class HubChannel extends EventTarget {
     this._signedIn = !!this.store.state.credentials.token;
     this._permissions = {};
     this._blockedSessionIds = new Set();
+    /**
+     * belivvr custom
+     * 화면공유 한 세션 id, 음소거된 세션 id, 움직임 제어된 세션 id 들을
+     * 일반 유저들과 구분하기 위해 모두 각 Set에 담음
+     */
+    this._shareScreenSessionIds = new Set();
+    this._muteSessionIds = new Set();
+    this._freezeSessionIds = new Set();
 
     store.addEventListener("profilechanged", this.sendProfileUpdate.bind(this));
   }
@@ -154,6 +165,18 @@ export default class HubChannel extends EventTarget {
     // Note: token is not verified.
     this.token = token;
     this._permissions = jwtDecode(token);
+
+    /**
+     * belivvr custom
+     * 강퇴 권한을 가진 유저라면 방장이기 때문에
+     * 움직임 제어, 화면공유, 음소거 권한을 모두 부여함
+     */
+    if (this._permissions.kick_users) {
+      this._permissions.freeze = true;
+      this._permissions.grant_share_screen = true;
+      this._permissions.apply_mute = true;
+    }
+
     configs.setIsAdmin(this._permissions.postgrest_role === "ret_admin");
     this.dispatchEvent(new CustomEvent("permissions_updated"));
 
@@ -428,6 +451,42 @@ export default class HubChannel extends EventTarget {
         .receive("error", reject);
     });
   };
+
+  /**
+   * belivvr custom
+   * 각 기능 부여 및 회수시에 Set에 넣고 뺌
+   * Set에는 각 유저 세션 ID 값이 들어가서 구분을 함
+   */
+
+  grantShareScreen = sessionId => {
+    this.channel.push("message", { type: "grant_share_screen", body: sessionId });
+    this._shareScreenSessionIds.add(sessionId);
+  };
+  revokeShareScreen = sessionId => {
+    this.channel.push("message", { type: "revoke_share_screen", body: sessionId });
+    this._shareScreenSessionIds.delete(sessionId);
+  };
+  isShareScreen = sessionId => this._shareScreenSessionIds.has(sessionId);
+
+  applyMute = sessionId => {
+    this.channel.push("message", { type: "apply_mute", body: sessionId });
+    this._muteSessionIds.add(sessionId);
+  };
+  cancelMute = sessionId => {
+    this.channel.push("message", { type: "cancel_mute", body: sessionId });
+    this._muteSessionIds.delete(sessionId);
+  };
+  isMute = sessionId => this._muteSessionIds.has(sessionId);
+
+  freeze = sessionId => {
+    this.channel.push("message", { type: "freeze", body: sessionId });
+    this._freezeSessionIds.add(sessionId);
+  };
+  unfreeze = sessionId => {
+    this.channel.push("message", { type: "unfreeze", body: sessionId });
+    this._freezeSessionIds.delete(sessionId);
+  };
+  isFreeze = sessionId => this._freezeSessionIds.has(sessionId);
 
   mute = sessionId => this.channel.push("mute", { session_id: sessionId });
   addOwner = sessionId => this.channel.push("add_owner", { session_id: sessionId });

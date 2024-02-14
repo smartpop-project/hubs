@@ -76,6 +76,20 @@ function ObjectMenuItems({ hubChannel, scene, activeObject, deselectObject, onGo
           )}
         </span>
       </ObjectMenuButton>
+      {
+        /**
+         * belivvr custom
+         * 파일 다운로드가 가능하게 다운로드 버튼 추가.
+         */
+        url && (
+          <ObjectMenuButton as="a" href={url} target="_blank" rel="noopener noreferrer" download={true}>
+            <LinkIcon />
+            <span>
+              <FormattedMessage id="object-menu.object-download-button" defaultMessage="Download" />
+            </span>
+          </ObjectMenuButton>
+        )
+      }
       {url && (
         <ObjectMenuButton as="a" href={url} target="_blank" rel="noopener noreferrer">
           <LinkIcon />

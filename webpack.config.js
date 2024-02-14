@@ -729,6 +729,14 @@ module.exports = async (env, argv) => {
           POSTGREST_SERVER: process.env.POSTGREST_SERVER,
           UPLOADS_HOST: process.env.UPLOADS_HOST,
           BASE_ASSETS_PATH: process.env.BASE_ASSETS_PATH,
+          /**
+           * belivvr custom
+           * .env 추가
+           * CNUMETA_JNU, NCLOUD
+           */
+          CNUMETA_JNU: process.env.CNUMETA_JNU,
+          NCLOUD: process.env.NCLOUD,
+          BACKEND_URL: process.env.XRCLOUD_BACKEND_URL || process.env.BACKEND_URL,
           APP_CONFIG: appConfig
         })
       })

@@ -3,7 +3,8 @@ import {
   updateVRHudPresenceCount,
   updateSceneCopresentState,
   createHubChannelParams,
-  isLockedDownDemoRoom
+  isLockedDownDemoRoom,
+  getCurrentHubScene
 } from "./utils/hub-utils";
 import "./utils/debug-log";
 import configs from "./utils/configs";
@@ -139,6 +140,8 @@ import "./components/avatar-inspect-collider";
 import "./components/video-texture-target";
 import "./components/mirror";
 import "./components/fullbody-animation";
+import "./components/share-screen-button";
+
 
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -197,7 +200,9 @@ import { LinkHoverMenuPrefab } from "./prefabs/link-hover-menu";
 import { PDFMenuPrefab } from "./prefabs/pdf-menu";
 import { loadWaypointPreviewModel, WaypointPreview } from "./prefabs/waypoint-preview";
 import { preload } from "./utils/preload";
+import { serverUrl } from "./config";
 
+window.serverUrl = serverUrl
 window.APP = new App();
 function addToScene(entityDef, visible) {
   return getScene().then(scene => {
@@ -733,6 +738,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     root = createRoot(container);
   }
 
+  /**
+ * belivvr custom
+ * token 값이 있는지 확인
+ * 유저 인증을 하기 위함
+ */
+  const qs = new URLSearchParams(location.search);
+  if (qs.has("token")) {
+    const token = qs.get("token");
+    console.log(token);
+    const email = "default";
+    store.update({ credentials: { email, token } });
+  }
+
   if (isOAuthModal) {
     return;
   }
@@ -762,6 +780,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const hubId = getCurrentHubId();
   console.log(`Hub ID: ${hubId}`);
+
+  /**
+   * belivvr custom
+   * 공지사항 보내기 위해 작성된 코드(에단)
+   */
+  const sceneId = await getCurrentHubScene();
+  console.log(`Scene ID: ${sceneId}`);
 
   const shouldRedirectToSignInPage =
     // Default room won't work if account is required to access
@@ -1285,6 +1310,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+
+  /**
+   * belivvr custom
+   * 전체 공지 내리는 코드.
+   */
+  const { credentials } = store.state;
+  const belivvrChannel = socket.channel(`belivvr`);
+
+  belivvrChannel
+    .join()
+    .receive("ok", data => {
+      console.log(data);
+    })
+    .receive("error", error => {
+      console.error(error);
+    });
+
+  belivvrChannel.on("all", (message) => {
+    messageDispatch.receive({
+      type: "operator_notice",
+      message: message.payload
+    });
+  });
+
+  if (sceneId) {
+    belivvrChannel.on(sceneId, (message) => {
+      messageDispatch.receive({
+        type: "operator_notice",
+        message: message.payload
+      });
+    });
+  }
+
+  belivvrChannel.on(hubId, (message) => {
+    messageDispatch.receive({
+      type: "operator_notice",
+      message: message.payload
+    });
+  });
+
   // We need to be able to wait for initial presence syncs across reconnects and socket migrations,
   // so we create this object in the outer scope and assign it a new promise on channel join.
   const presenceSync = {
@@ -1352,6 +1417,69 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   hubPhxChannel.on("message", ({ session_id, type, body, from }) => {
+    /**
+     * belivvr custom
+     * 음소거 트리거 코드
+     */
+    if (type === "apply_mute" && body === NAF.clientId) {
+      window.dispatchEvent(new CustomEvent("apply_mute", { detail: { isOn: true } }));
+      APP.mediaDevicesManager.toggleMic();
+      APP.mediaDevicesManager.micEnabled = false;
+      return;
+    }
+
+    /**
+     * belivvr custom
+     * 음소거 해제 트리거 코드
+     */
+    if (type === "cancel_mute" && body === NAF.clientId) {
+      window.dispatchEvent(new CustomEvent("apply_mute", { detail: { isOn: false } }));
+      APP.mediaDevicesManager.micEnabled = true;
+      return;
+    }
+
+    /**
+     * belivvr custom
+     * 화면공유 권한 부여 트리거 코드
+     */
+    if (type === "grant_share_screen") {
+      body === NAF.clientId && window.dispatchEvent(new CustomEvent("share_screen", { detail: { isOn: true } }));
+      return;
+    }
+
+    /**
+     * belivvr custom
+     * 화면공유 권한 해제 트리거 코드
+     */
+    if (type === "revoke_share_screen") {
+      body === NAF.clientId && window.dispatchEvent(new CustomEvent("share_screen", { detail: { isOn: false } }));
+      return;
+    }
+
+    /**
+     * belivvr custom
+     * 움직임 제어 트리거 코드
+     */
+    if (type === "freeze" && body === NAF.clientId) {
+      if (detectMobile()) {
+        window.dispatchEvent(new CustomEvent("mobile-freeze"));
+      }
+      window.dispatchEvent(new CustomEvent("freeze"));
+      return;
+    }
+
+    /**
+     * belivvr custom
+     * 움직임 제어 해제 코드
+     */
+    if (type === "unfreeze" && body === NAF.clientId) {
+      if (detectMobile()) {
+        window.dispatchEvent(new CustomEvent("mobile-unfreeze"));
+      }
+      window.dispatchEvent(new CustomEvent("unfreeze"));
+      return;
+    }
+
     const getAuthor = () => {
       const userInfo = hubChannel.presence.state[session_id];
       if (from) {

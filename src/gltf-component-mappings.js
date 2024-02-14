@@ -73,6 +73,12 @@ AFRAME.GLTFModelPlus.registerComponent("loop-animation", "loop-animation");
 AFRAME.GLTFModelPlus.registerComponent("uv-scroll", "uv-scroll");
 AFRAME.GLTFModelPlus.registerComponent("frustrum", "frustrum");
 AFRAME.GLTFModelPlus.registerComponent("mirror", "mirror");
+/**
+ * belivvr custom
+ * 화면공유 칠판 컴포넌트 등록
+ */
+AFRAME.GLTFModelPlus.registerComponent("shared-screen", "shared-screen");
+
 AFRAME.GLTFModelPlus.registerComponent(
   "box-collider",
   "shape-helper",
@@ -296,6 +302,31 @@ AFRAME.GLTFModelPlus.registerComponent("video", "video", mediaInflatorNoResize, 
   }
 });
 AFRAME.GLTFModelPlus.registerComponent("link", "link", mediaInflatorNoResize);
+AFRAME.GLTFModelPlus.registerComponent(
+  "inline-frame",
+  "inline-frame",
+  async (el, componentName, componentData, components) => {
+    el.setAttribute("networked", {
+      template: "#static-controlled-media",
+      owner: "scene",
+      persistent: true,
+      networkId: components.networked.id
+    });
+
+    el.setAttribute("media-loader", {
+      src: sanitizeUrl(componentData.src),
+      frameOption: componentData.frameOption,
+      resolve: true,
+      fileIsOwned: true,
+      animate: false,
+      moveTheParentNotTheMesh: true
+    });
+
+    el.setAttribute("inner-thumbnail", componentData.imageURL);
+
+    el.setAttribute("inner-frame", "true");
+  }
+);
 
 AFRAME.GLTFModelPlus.registerComponent("hoverable", "is-remote-hover-target", el => {
   el.setAttribute("is-remote-hover-target", "");

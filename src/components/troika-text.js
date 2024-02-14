@@ -59,7 +59,15 @@ AFRAME.registerComponent("text", {
     direction: { type: "string", default: "auto", oneOf: ["auto", "ltr", "rtl"] },
     fillOpacity: { type: "number", default: 1 },
     // This is different from the Troika preoperty name, Using "fontUrl" to prevent conflict with previous "font" property and to allow us to make named fonts later
-    fontUrl: { type: "string" },
+    /**
+    * belivvr custom
+    * 한글 폰트 추가
+    */
+    fontUrl: {
+        type: "string",
+        default:
+          "https://cdn.jsdelivr.net/gh/spoqa/spoqa-han-sans@latest/Subset/SpoqaHanSansNeo/SpoqaHanSansNeo-Regular.woff"
+    },
     // This default value differs from the Troika default of 0.1, it most closely matches the size of our previous text component.
     fontSize: { type: "number", default: 0.075 },
     letterSpacing: { type: "number", default: 0 },

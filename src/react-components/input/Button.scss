@@ -73,6 +73,31 @@
   }
 }
 
+/*
+  belivvr custom
+  "belivvr-accept", "belivvr-cancel" 커스텀 버튼 css 추가
+*/
+:local(.belivvr-accept) {
+  color: #000;
+  background-color: transparent;
+  border: 2px solid #4B7EE3;
+
+  &:hover {
+    color: #000;
+    background-color: #E3EBFF;
+  }
+}
+
+:local(.belivvr-cancel) {
+  color: theme.$text5-color;
+  background-color: #215BF0;
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: #3D71F6;
+  }
+}
+
 :local(.accept) {
   color: theme.$text5-color;
   background-color: theme.$accept-color;

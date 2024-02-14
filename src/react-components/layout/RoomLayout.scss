@@ -35,7 +35,7 @@
     right: 0;
     margin: 0;
     width: 100%;
-    z-index: 9;
+    z-index: 100001;
   }
 }
 
@@ -55,7 +55,7 @@
   grid-row-start: toolbar;
   grid-column-end: -1;
   pointer-events: auto;
-  z-index: 0;
+  z-index: 100000;
 }
 
 :local(.modal-container) {

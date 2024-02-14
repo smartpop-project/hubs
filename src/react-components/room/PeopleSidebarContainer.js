@@ -8,13 +8,22 @@ import { useCan } from "./hooks/useCan";
 import { useRoomPermissions } from "./hooks/useRoomPermissions";
 import { useRole } from "./hooks/useRole";
 
-export function userFromPresence(sessionId, presence, micPresences, mySessionId, voiceEnabled) {
+export function userFromPresence(
+  sessionId,
+  presence,
+  micPresences,
+  mySessionId,
+  voiceEnabled,
+  isShare,
+  isMute,
+  isFreeze
+) {
   const meta = presence.metas[presence.metas.length - 1];
   const micPresence = micPresences.get(sessionId);
   if (micPresence && !voiceEnabled && !meta.permissions.voice_chat) {
     micPresence.muted = true;
   }
-  return { id: sessionId, isMe: mySessionId === sessionId, micPresence, ...meta };
+  return { id: sessionId, isMe: mySessionId === sessionId, micPresence, isShare, isMute, isFreeze, ...meta };
 }
 
 function usePeopleList(presences, mySessionId, micUpdateFrequency = 500) {
@@ -27,9 +36,28 @@ function usePeopleList(presences, mySessionId, micUpdateFrequency = 500) {
     function updateMicrophoneState() {
       const micPresences = getMicrophonePresences();
 
+      /**
+       * belivvr custom
+       * 초반에는 people 값이 비어 있어서 people.find(); 로 {isShare, isMute, isFreeze} 값을 찾는게 불가능함.
+       * 따라서 초반에는 기존 모질라 허브 오리지널 소스 그대로 setPeople로 초기화를 해줌.
+       */
+      if (people.length === 0) {
+        setPeople(
+          Object.entries(presences).map(([id, presence]) => {
+            return userFromPresence(id, presence, micPresences, mySessionId, voiceChatEnabled);
+          })
+        );
+        return;
+      }
+
       setPeople(
         Object.entries(presences).map(([id, presence]) => {
-          return userFromPresence(id, presence, micPresences, mySessionId, voiceChatEnabled);
+          const person = people.find(person => person.id === id);
+          // belivvr custom "isShare", "isMute", "isFreeze" 추가
+          const { isShare, isMute, isFreeze } = person || false;
+
+          // belivvr custom "isShare", "isMute", "isFreeze" 추가
+          return userFromPresence(id, presence, micPresences, mySessionId, voiceChatEnabled, isShare, isMute, isFreeze);
         })
       );
 
@@ -41,9 +69,10 @@ function usePeopleList(presences, mySessionId, micUpdateFrequency = 500) {
     return () => {
       clearTimeout(timeout);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presences, micUpdateFrequency, setPeople, mySessionId, voiceChatEnabled]);
 
-  return people;
+  return [people, setPeople];
 }
 
 function PeopleListContainer({ hubChannel, people, onSelectPerson, onClose }) {
@@ -91,7 +120,7 @@ export function PeopleSidebarContainer({
   showNonHistoriedDialog,
   onClose
 }) {
-  const people = usePeopleList(presences, mySessionId);
+  const [people, setPeople] = usePeopleList(presences, mySessionId);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const selectedPerson = people.find(person => person.id === selectedPersonId);
   const setSelectedPerson = useCallback(
@@ -125,6 +154,8 @@ export function PeopleSidebarContainer({
           onBack={() => setSelectedPersonId(null)}
           onCloseDialog={onCloseDialog}
           showNonHistoriedDialog={showNonHistoriedDialog}
+          people={people}
+          setPeople={setPeople}
         />
       );
     }

@@ -5,10 +5,29 @@ import styles from "./IconButton.scss";
 import textInputStyles from "./TextInput.scss";
 
 export const IconButton = memo(
-  forwardRef(({ className, as: ButtonComponent, compactSm, lg, children, ...rest }, ref) => {
+  forwardRef(({ className, as: ButtonComponent, compactSm, lg, children, download, ...rest }, ref) => {
     const buttonProps = ButtonComponent === "button" ? { type: "button" } : {};
 
-    return (
+    /**
+     * belivvr custom
+     * "download"가 true인 경우에는 a태그 클릭시 페이지 이동이 아닌 파일 다운로드가 되게 함
+     */
+    return download ? (
+      <ButtonComponent
+        className={classNames(
+          styles.iconButton,
+          textInputStyles.iconButton,
+          { [styles.compactSm]: compactSm, [styles.lg]: lg },
+          className
+        )}
+        {...buttonProps}
+        {...rest}
+        ref={ref}
+        download
+      >
+        {children}
+      </ButtonComponent>
+    ) : (
       <ButtonComponent
         className={classNames(
           styles.iconButton,
@@ -32,7 +51,8 @@ IconButton.propTypes = {
   compactSm: PropTypes.bool,
   lg: PropTypes.bool,
   className: PropTypes.string,
-  children: PropTypes.node
+  children: PropTypes.node,
+  download: PropTypes.bool
 };
 
 IconButton.defaultProps = {

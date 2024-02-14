@@ -13,9 +13,32 @@ const ROTATION_SPEED = 0.025;
  * @component virtual-gamepad-controls
  */
 AFRAME.registerComponent("virtual-gamepad-controls", {
-  schema: {},
+  schema: {
+    position: {default: {
+      front: 0,
+      right: 0
+    }}
+  },
 
   init() {
+    /**
+     * belivvr custom
+     * 모바일 경우 관리자(방장)에 의해 움직임 제어시 gamepad를 숨김
+     */
+    window.addEventListener("mobile-freeze", () => {
+      this.leftStick[0].ui.el.style.visibility = "hidden";
+      this.rightStick[0].ui.el.style.visibility = "hidden";
+    });
+
+    /**
+     * belivvr custom
+     * 모바일 경우 관리자(방장)에 의해 움직임 제어 해제시 gamepad를 보임
+     */
+    window.addEventListener("mobile-unfreeze", () => {
+      this.leftStick[0].ui.el.style.visibility = "visible";
+      this.rightStick[0].ui.el.style.visibility = "visible";
+    });
+    
     this.characterController = this.el.sceneEl.systems["hubs-systems"].characterController;
 
     this.onEnterVr = this.onEnterVr.bind(this);
@@ -172,6 +195,27 @@ AFRAME.registerComponent("virtual-gamepad-controls", {
     const force = joystick.force < 1 ? joystick.force : 1;
     this.displacement.set(Math.cos(angle), 0, -Math.sin(angle)).multiplyScalar(force * 1.85);
     this.moving = true;
+
+    /**
+     * belivvr custom
+     * 모바일에서 풀 바디 아바타시 gamepad 각도에 따른 움직임 제어(애니메이션) 코드 추가.
+     * 0~80은 오른쪽 위 대각선 80~100은 오른쪽 이어야 한다. (hunjuly)
+     */
+    const degree = angle * 180 / Math.PI;
+    if(degree <= 90) {
+      this.data.position.front = 1;
+      this.data.position.right = 1;
+    }else if(degree <= 180) {
+      this.data.position.front = 1;
+      this.data.position.right = -1;
+    }else if(degree <= 270) {
+      this.data.position.front = -1;
+      this.data.position.right = -1
+    }else{
+      this.data.position.front = -1;
+      this.data.position.right = 1;
+    }
+
   },
 
   onMoveJoystickEnd() {
@@ -201,6 +245,13 @@ AFRAME.registerComponent("virtual-gamepad-controls", {
       return;
     }
     if (this.moving) {
+      /**
+       * belivvr custom
+       * 캐릭터가 이동하고 있을 경우에
+       * nipple-move 이벤트를 호출해 실제로 아바타가 움직이게 함
+       */
+      const event = new CustomEvent("nipple-move", {detail: this.data.position});
+      document.dispatchEvent(event);
       this.characterController.enqueueRelativeMotion(this.displacement);
     }
     if (this.rotating) {

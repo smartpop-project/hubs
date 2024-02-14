@@ -326,6 +326,14 @@ export function formatSystemMessage(entry, intl) {
       );
     case "log":
       return intl.formatMessage(logMessages[entry.messageType], entry.props);
+    case "operator_notice":
+      return (
+          <FormattedMessage
+            id="chat-sidebar.system-message.operator-notice"
+            defaultMessage="{message}"
+            values={{ message: <b>{entry.message}</b> }}
+          />
+        );
     default:
       return null;
   }

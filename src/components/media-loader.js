@@ -45,6 +45,7 @@ AFRAME.registerComponent("media-loader", {
     fileId: { type: "string" },
     fileIsOwned: { type: "boolean" },
     src: { type: "string" },
+    frameOption: { default: null },
     version: { type: "number", default: 1 }, // Used to force a re-resolution
     fitToBox: { default: false },
     moveTheParentNotTheMesh: { default: false },
@@ -583,6 +584,21 @@ AFRAME.registerComponent("media-loader", {
                 template: "#hubs-destination-hover-menu",
                 isFlat: true
               });
+            } else if (this.el.getAttribute('inner-frame')) {
+              this.el.setAttribute("hover-menu__link", { template: "#inline-hover-menu", isFlat: true });
+              this.el.childNodes.forEach((child) => {
+                if (child.id === 'inline-wrapper') {
+                  child.childNodes[1].setAttribute("inline-frame-button", `src: ${this.data.src}; frameOption: ${this.data.frameOption};`);
+                }
+              });
+              this.el.setAttribute(
+                "media-image",
+                Object.assign({}, this.data.mediaOptions, {
+                  src: this.el.getAttribute('inner-thumbnail') || thumbnail,
+                  version,
+                  contentType: guessContentType(thumbnail) || "image/png"
+                })
+              );
             } else {
               this.el.setAttribute("hover-menu__link", { template: "#link-hover-menu", isFlat: true });
             }

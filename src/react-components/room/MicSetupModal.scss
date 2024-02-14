@@ -9,9 +9,9 @@ $mobile-breakpoint-width: 450px;
     line-height: 1.2;
   }
 
-  & > :last-child {
-    margin-top: auto;
-  }
+  // & > :last-child {
+  //   margin-top: auto;
+  // }
 }
 
 :local(.audio-check-container) {
