@@ -3,12 +3,11 @@ set -e
 cd "$(dirname "$0")"
 . ./.env
 
-docker rm -f admin hubs-ex-vscode
+docker rm -f admin hubs-vscode
 
 docker run --log-opt max-size=10m --log-opt max-file=3 -d --restart=always --name admin \
--v $SSL_CERT_FILE:/etc/nginx/certs/cert.pem \
--v $SSL_KEY_FILE:/etc/nginx/certs/key.pem \
--v $(pwd)/nginx.conf.admin:/etc/nginx/nginx.conf \
+-v $(pwd)/../certs:/etc/nginx/certs \
+-v $(pwd)/nginx.conf:/etc/nginx/nginx.conf \
 -p 8989:8989 \
 admin
 
