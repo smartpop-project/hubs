@@ -5,9 +5,6 @@ import copy from "copy-to-clipboard";
 import { FormattedMessage } from "react-intl";
 import screenfull from "screenfull";
 
-import { MyCameraTool } from "../bit-components";
-import { anyEntityWith } from "../utils/bit-utils";
-
 import configs from "../utils/configs";
 import { isLockedDownDemoRoom } from "../utils/hub-utils";
 import { VR_DEVICE_AVAILABILITY } from "../utils/vr-caps-detect";
@@ -27,7 +24,6 @@ import { getPresenceProfileForSession, hubUrl } from "../utils/phoenix-utils";
 import { getMicrophonePresences } from "../utils/microphone-presence";
 import { getCurrentStreamer } from "../utils/component-utils";
 import { isIOS } from "../utils/is-mobile";
-import { CAMERA_MODE_THIRD_PERSON_VIEW, CAMERA_MODE_FIRST_PERSON } from "../systems/camera-system";
 
 import ProfileEntryPanel from "./profile-entry-panel";
 import MediaBrowserContainer from "./media-browser";
@@ -107,8 +103,6 @@ import { usePermissions } from "./room/hooks/usePermissions";
 import { ChatContextProvider } from "./room/contexts/ChatContext";
 import ChatToolbarButton from "./room/components/ChatToolbarButton/ChatToolbarButton";
 import SeePlansCTA from "./room/components/SeePlansCTA/SeePlansCTA";
-import { BackButton } from "./input/BackButton";
-import { IframeSidebar } from "./iframeSidebar/iframeSidebar";
 
 const avatarEditorDebug = qsTruthy("avatarEditorDebug");
 
@@ -215,25 +209,8 @@ class UIRoot extends Component {
     objectSrc: "",
     sidebarId: null,
     presenceCount: 0,
-    chatInputEffect: () => {},
-
-    shareScreenPermitted: null,
-    isMute: false,
-
     chatPrefix: "",
-    chatAutofocus: false,
-    returnUrl: "",
-    isHost: false,
-
-    "camera-button": false,
-    "invitation-button": false,
-    "left-button": false,
-    "more-button": false,
-    "object-button": false,
-    "place-button": false,
-
-    innerFrameURL: "",
-    mainInnerFrame: false,
+    chatAutofocus: false
   };
 
   constructor(props) {
@@ -311,22 +288,6 @@ class UIRoot extends Component {
     }
   }
 
-  /**
-   * belivvr custom
-   * apply_mute 이벤트 트리거시에 isMute state가 변경
-   */
-  onApplyMute = e => {
-    this.setState({ isMute: e.detail.isOn });
-  };
-
-  /**
-   * belivvr custom
-   * share_screen 이벤트 트리거시에 shareScreenPermitted state가 변경
-   */
-  onShareScreen = e => {
-    this.setState({ shareScreenPermitted: e.detail.isOn });
-  };
-
   onConcurrentLoad = () => {
     if (qsTruthy("allow_multi") || this.props.store.state.preferences.allowMultipleHubsInstances) return;
     this.startAutoExitTimer(AutoExitReason.concurrentSession);
@@ -349,18 +310,10 @@ class UIRoot extends Component {
   };
 
   componentDidMount() {
-    /**
-     * belivvr custom
-     * apply_mute, share_screen 이벤트 추가
-     * 다른 곳에서 해당 이벤트를 트리거하면 함수가 실행됨
-     */
-    window.addEventListener("apply_mute", this.onApplyMute);
-    window.addEventListener("share_screen", this.onShareScreen);
     window.addEventListener("concurrentload", this.onConcurrentLoad);
     window.addEventListener("idle_detected", this.onIdleDetected);
     window.addEventListener("activity_detected", this.onActivityDetected);
     window.addEventListener("focus_chat", this.onFocusChat);
-    window.addEventListener("inline-url", this.onInlineFrame);
     document.querySelector(".a-canvas").addEventListener("mouseup", () => {
       if (this.state.showShareDialog) {
         this.setState({ showShareDialog: false });
@@ -449,44 +402,6 @@ class UIRoot extends Component {
     this.playerRig = scene.querySelector("#avatar-rig");
 
     scene.addEventListener("action_media_tweet", this.onTweet);
-
-    const roomId = new URLSearchParams(window.location.search).get("private") || new URLSearchParams(window.location.search).get("public") || new URLSearchParams(window.location.search).get("static")
-    const privateType = new URLSearchParams(window.location.search).get("private") && "private"
-    const publicType = new URLSearchParams(window.location.search).get("public") && "public"
-    const staticType = new URLSearchParams(window.location.search).get("static") && "static"
-
-    if(roomId){
-      fetch(`${window.serverUrl}/api/rooms/option/${roomId}?type=${privateType || publicType || staticType}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        }
-      }).then(async (res) => {
-        const data = await res.json();
-        const { token, role } = data;
-        const store = window.APP.store;
-        if (role.toLowerCase() === "host") {
-          store.update({ credentials: { token } });
-        } else {
-          store.update({ credentials: { token: "" } });
-        }
-
-        if (data.funcs) {
-          const funcNames = ["camera-button", "invitation-button", "left-button", "more-button", "object-button", "place-button"];
-
-          funcNames.forEach(funcName => {
-            if (data.funcs[funcName]) {
-              this.setState({ [funcName]: true });
-            }
-          });
-        }
-
-        const link =
-        window.document.querySelector("link[rel*='icon']")
-        this.setState({ returnUrl: data.returnUrl })
-        if (link) link.href = data.faviconUrl
-      })
-    }
   }
 
   UNSAFE_componentWillMount() {
@@ -501,7 +416,6 @@ class UIRoot extends Component {
     this.props.scene.removeEventListener("share_video_failed", this.onShareVideoFailed);
     this.props.scene.removeEventListener("action_media_tweet", this.onTweet);
     this.props.store.removeEventListener("statechanged", this.storeUpdated);
-    window.removeEventListener("share_screen", this.onShareScreen);
     window.removeEventListener("concurrentload", this.onConcurrentLoad);
     window.removeEventListener("idle_detected", this.onIdleDetected);
     window.removeEventListener("activity_detected", this.onActivityDetected);
@@ -864,13 +778,6 @@ class UIRoot extends Component {
     this.setState({ sidebarId, chatPrefix: "", chatAutofocus: false, selectedUserId: null, ...(otherState || {}) });
   }
 
-  setIframeSize(size) {
-    this.setState({ iframeSize: size })
-    if (size === "large") {
-      this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false })
-    }
-  }
-
   toggleSidebar(sidebarId, otherState) {
     this.setState(({ sidebarId: curSidebarId }) => {
       const nextSidebarId = curSidebarId === sidebarId ? null : sidebarId;
@@ -892,16 +799,6 @@ class UIRoot extends Component {
         chatPrefix: e.detail.prefix,
         chatAutofocus: true
       });
-
-  onInlineFrame = e => {
-    this.setState({ innerFrameURL: e.detail.url });
-    if (e.detail.option === 'main') {
-      this.setState({ mainInnerFrame: true });
-      if (window.innerWidth > 992) this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
-      return;
-    }
-    if (this.state.sidebarId !== "side-iframe") {
-      this.toggleSidebar("side-iframe");
     }
   };
 
@@ -1147,8 +1044,6 @@ class UIRoot extends Component {
 
     if (this.props.showInterstitialPrompt) return this.renderInterstitialPrompt();
 
-    const isMute = this.state.isMute;
-    const shareScreenPermitted = this.state.shareScreenPermitted;
     const entered = this.state.entered;
     const watching = this.state.watching;
     const enteredOrWatching = entered || watching;
@@ -1440,20 +1335,6 @@ class UIRoot extends Component {
       }
     ];
 
-    /**
-     * belivvr custom
-     * 하단 버튼 추가를 위해 ?funcs=를 확인하는 코드
-     */
-    const qsFuncs = new URLSearchParams(location.search).get("funcs")?.split(",");
-    const is3rd = qsFuncs?.some(str => str === "3rd-view");
-    const leftButton = qsFuncs?.some(str => str === "left-button");
-    const moreButton = qsFuncs?.some(str => str === "more-button");
-    const objectButton = qsFuncs?.some(str => str === "object-button");
-    const invitation = qsFuncs?.some(str => str === "invitation-button");
-    const placeButton = qsFuncs?.some(str => str === "place-button");
-    const camera = qsFuncs?.some(str => str === "camera-button");
-
-    const mainpage = new URLSearchParams(location.search).get("mainpage");
     return (
       <MoreMenuContextProvider>
         <ReactAudioContext.Provider value={this.state.audioContext}>
@@ -1525,64 +1406,17 @@ class UIRoot extends Component {
                 streaming={streaming}
                 viewport={
                   <>
-                    {this.state.mainInnerFrame && (
-                      <div
-                      id="viewport-inline"
-                      style={{
-                        position:'absolute',
-                        left:0,
-                        top:0,
-                        width: "100%",
-                        height: "100%",
-                        zIndex: 10,
-                      }}
-                      >
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '48px',
-                            display:'flex',
-                            alignItems: 'center',
-                            padding: '0 1rem',
-                            borderBottom: '1px solid #eee',
-                            backgroundColor: '#fff'
-                          }}>
-                            <BackButton onClick={() => {
-                              this.setState({ mainInnerFrame: false })
-                              this.setSidebar()
-                            }} />
-                        </div>
-                        <iframe
-                          src={this.state.innerFrameURL}
-                          style={{
-                              width: '100%',
-                              height: 'calc(100% - 48px)',
-                              outline: 'none',
-                              border: 'none',
-                            }}
-                        ></iframe>
-                      </div>
-                    )}
                     {!this.state.dialog && renderEntryFlow ? entryDialog : undefined}
                     {!this.props.selectedObject && <CompactMoreMenuButton />}
                     {(!this.props.selectedObject ||
                       (this.props.breakpoint !== "sm" && this.props.breakpoint !== "md")) && (
                       <ContentMenu>
-                        {
-                          /**
-                           * belivvr custom
-                           * ?funcs=object-button
-                           * funcs 에 object-button 이 있으면 오브젝트 리스트를 보여줌
-                           */
-
-                          // showObjectList
-                          (this.state['object-button'] || objectButton) && (
-                            <ObjectsMenuButton
-                              active={this.state.sidebarId === "objects"}
-                              onClick={() => this.toggleSidebar("objects")}
-                            />
-                          )
-                        }
+                        {showObjectList && (
+                          <ObjectsMenuButton
+                            active={this.state.sidebarId === "objects"}
+                            onClick={() => this.toggleSidebar("objects")}
+                          />
+                        )}
                         <PeopleMenuButton
                           active={this.state.sidebarId === "people"}
                           disabled={isLockedDownDemo}
@@ -1752,33 +1586,19 @@ class UIRoot extends Component {
                       {this.state.sidebarId === "ecs-debug" && (
                         <ECSDebugSidebarContainer onClose={() => this.setSidebar(null)} />
                       )}
-                      {this.state.sidebarId === "side-iframe" && (
-                        <IframeSidebar
-                          title={<FormattedMessage id="room-settings-sidebar.iframe" defaultMessage="Room Settings" />}
-                          beforeTitle={<BackButton onClick={() => this.setSidebar()} />}
-                        >
-                          <iframe src={this.state.innerFrameURL} style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'transparent', border: 'none'}}></iframe>
-                        </IframeSidebar>
-                      )}
                     </>
                   ) : undefined
                 }
                 modal={this.state.dialog}
-                /**
-                 * belivvr custom
-                 * funcs=invitation-button
-                 * funcs 에 invitation-button 이 있으면 초대하기 버튼을 보여줌
-                 */
                 toolbarLeft={
                   <>
-                    {(this.state['invitation-button'] || invitation) && (
-                      <InvitePopoverContainer
-                        hub={this.props.hub}
-                        hubChannel={this.props.hubChannel}
-                        scene={this.props.scene}
-                        store={this.props.store}
-                      />
-                    )}
+                    <InvitePopoverContainer
+                      hub={this.props.hub}
+                      hubChannel={this.props.hubChannel}
+                      scene={this.props.scene}
+                      store={this.props.store}
+                    />
+                    {isLockedDownDemo && <SeePlansCTA />}
                   </>
                 }
                 toolbarCenter={
@@ -1805,96 +1625,32 @@ class UIRoot extends Component {
                     )}
                     {entered && (
                       <>
-                        {
-                          /**
-                           * belivvr custom
-                           * ?mainpage=https://cnumeta.jnu.ac.kr
-                           * mainpage 쿼리스트링이 있으면 해당 URL로 이동하는 버튼 추가.
-                           */
-                          !isLockedDownDemo && mainpage && (
-                            <ToolbarButton
-                              icon={<HomeIcon />}
-                              label={<FormattedMessage id="toolbar.mainpage" defaultMessage="Go to mainpage" />}
-                              onClick={() => {
-                                window.location = mainpage;
-                              }}
-                            />
-                          )
-                        }
-                        {!isLockedDownDemo && !isMute && <AudioPopoverButtonContainer scene={this.props.scene} />}
-                        {!isLockedDownDemo && (shareScreenPermitted || this.props.hubChannel.canOrWillIfCreator("grant_share_screen")) && (
-                          <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />
-                        )}
-                        {
-                          /**
-                           * belivvr custom
-                           * funcs=place-button
-                           * funcs 에 place-button 이 있으면 방꾸미기 버튼(오브젝트, 그리기 등등) 을 보여줌
-                           */
-                          (this.state['place-button'] || placeButton) && (
+                        {!isLockedDownDemo && (
+                          <>
+                            <AudioPopoverButtonContainer scene={this.props.scene} />
+                            <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />
                             <PlacePopoverContainer
                               scene={this.props.scene}
                               hubChannel={this.props.hubChannel}
                               mediaSearchStore={this.props.mediaSearchStore}
                               showNonHistoriedDialog={this.showNonHistoriedDialog}
                             />
-                          )
-                        }
-                        {
-                          /**
-                           * belivvr custom
-                           * funcs=camera-button
-                           * funcs 에 camera-button 이 있으면 사진찍기 버튼 추가
-                           */
-                          (this.state['camera-button'] || camera) &&
-                            (
-                              <ToolbarButton
-                                key="cameara"
-                                icon={<CameraIcon />}
-                                preset="accent5"
-                                onClick={() => this.props.scene.emit("action_toggle_camera")}
-                                label={<FormattedMessage id="place-popover.item-type.camera" defaultMessage="Camera" />}
-                                selected={!!anyEntityWith(APP.world, MyCameraTool)}
-                              />
-                            )
-                        }
-                        {
+                          </>
+                        )}
+                        {this.props.hubChannel.can("spawn_emoji") && (
                           <ReactionPopoverContainer
                             scene={this.props.scene}
                             initialPresence={getPresenceProfileForSession(this.props.presences, this.props.sessionId)}
                           />
-                        }
+                        )}
                       </>
                     )}
                     {!isLockedDownDemo && (
                       <ChatToolbarButton
                         onClick={() => this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false })}
+                        selected={this.state.sidebarId === "chat"}
                       />
                     )}
-                    {
-                      /**
-                       * belivvr custom
-                       * qsFuncs 에 "3rd-view" 가 있을 경우에
-                       * 3인칭 on/off 버튼 추가
-                       */
-                      entered && is3rd && (
-                        <ToolbarButton
-                          icon={<VRIcon />}
-                          label={<FormattedMessage id="toolbar.camera-view" defaultMessage="3rd person view" />}
-                          onClick={() => {
-                            const cameraMode = AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode;
-
-                            if (cameraMode === CAMERA_MODE_FIRST_PERSON) {
-                              AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode = CAMERA_MODE_THIRD_PERSON_VIEW;
-                            }
-
-                            if (cameraMode === CAMERA_MODE_THIRD_PERSON_VIEW) {
-                              AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode = CAMERA_MODE_FIRST_PERSON;
-                            }
-                          }}
-                        />
-                      )
-                    }
                     {entered && isMobileVR && (
                       <ToolbarButton
                         className={styleUtils.hideLg}
@@ -1916,36 +1672,26 @@ class UIRoot extends Component {
                         onClick={() => exit2DInterstitialAndEnterVR(true)}
                       />
                     )}
-                    {
-                      /**
-                       * belivvr custom
-                       * funcs=left-button
-                       * funcs 에 left-button 이 있으면 방나가기 버튼을 보여줌
-                       */
-                      entered && (
-                        <ToolbarButton
-                          icon={<LeaveIcon />}
-                          label={<FormattedMessage id="toolbar.leave-room-button" defaultMessage="Leave" />}
-                          preset="cancel"
-                          onClick={() => {
-                            this.showNonHistoriedDialog(LeaveRoomModal, {
-                              destinationUrl: this.state.returnUrl,
-                              reason: LeaveReason.leaveRoom
-                            });
-                          }}
-                        />
-                      )
-                    }
-                    {
-                      /**
-                       * belivvr custom
-                       * funcs=more-button
-                       * funcs 에 more-button 이 있으면 더보기 버튼을 보여줌
-                       */
-                      (this.state['more-button'] || moreButton) && (
-                        <MoreMenuPopoverButton menu={moreMenu} />
-                      )
-                    }
+                    {entered && (
+                      <ToolbarButton
+                        icon={<LeaveIcon />}
+                        label={<FormattedMessage id="toolbar.leave-room-button" defaultMessage="Leave" />}
+                        preset="cancel"
+                        selected={!!this.state.leaving}
+                        onClick={() => {
+                          this.setState({ leaving: true });
+                          this.showNonHistoriedDialog(LeaveRoomModal, {
+                            destinationUrl: "/",
+                            reason: LeaveReason.leaveRoom,
+                            onClose: () => {
+                              this.setState({ leaving: false });
+                              this.closeDialog();
+                            }
+                          });
+                        }}
+                      />
+                    )}
+                    <MoreMenuPopoverButton menu={moreMenu} />
                   </>
                 }
               />
