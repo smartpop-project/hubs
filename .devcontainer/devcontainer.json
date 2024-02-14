@@ -20,10 +20,12 @@
         "--name",
         "${containerWorkspaceFolderBasename}-vscode"
     ],
-    "initializeCommand": "docker rm -f client",
-    "postCreateCommand": "npm i",
+    "initializeCommand": "docker rm -f client admin || true",
+    "postCreateCommand": "npm i && npm i --legacy-peer-deps",
     "appPort": [
-        // hubs
-        "0.0.0.0:8080:8080"
+        // client
+        "0.0.0.0:8080:8080",
+        // admin
+        "0.0.0.0:8989:8989"
     ]
 }

@@ -2,13 +2,7 @@
 set -ex
 cd "$(dirname "$0")"
 
-. ./env.sh
-
-cd ../admin
-
-mkdir -p certs
-cp $SSL_CERT_FILE ./certs/cert.pem
-cp $SSL_KEY_FILE ./certs/key.pem
+. ./.env
 
 export HOST="$HUBS_HOST"
 export RETICULUM_SOCKET_SERVER="$HUBS_HOST"
