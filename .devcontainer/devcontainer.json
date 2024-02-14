@@ -21,7 +21,7 @@
         "${containerWorkspaceFolderBasename}-vscode"
     ],
     "initializeCommand": "docker rm -f client admin || true",
-    "postCreateCommand": "npm i && npm i --legacy-peer-deps",
+    "postCreateCommand": "npm ci && npm ci --legacy-peer-deps --prefix admin",
     "appPort": [
         // client
         "0.0.0.0:8080:8080",
