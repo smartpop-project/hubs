@@ -97,6 +97,10 @@ export default class MessageDispatch extends EventTarget {
     const captureSystem = this.scene.systems["capture-system"];
 
     switch (command) {
+      case "limitMicEnabled":
+        this.log(LogMessageType.limitMicEnabled);
+        break;
+
       case "fly":
         if (this.scene.systems["hubs-systems"].characterController.fly) {
           this.scene.systems["hubs-systems"].characterController.enableFly(false);

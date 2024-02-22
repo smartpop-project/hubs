@@ -100,6 +100,7 @@
   "chat-sidebar.log-message.audio-resumed": "오디오가 활성화 되었습니다.",
   "chat-sidebar.log-message.join-failed": "Room에 들어가지 못했습니다: {message}",
   "chat-sidebar.log-message.avatar-changed": "아바타가 변경되었습니다.",
+  "chat-sidebar.log-message.limit-mic-enabled": "음성 채팅방이 만원 상태입니다.",
   "chat-sidebar.system-message.leave": "{name} 님이 나가셨습니다.",
   "chat-sidebar.system-message.name-change": "{oldName} 님이 {newName} 로 이름을 변경하셨습니다.",
   "chat-sidebar.system-message.scene-change": "{name} 님이 scene을 {sceneName} 으로 변경하셨습니다.",

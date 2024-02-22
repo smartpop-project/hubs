@@ -186,7 +186,8 @@ export const LogMessageType = {
   audioSuspended: "audioSuspended",
   audioResumed: "audioResumed",
   joinFailed: "joinFailed",
-  avatarChanged: "avatarChanged"
+  avatarChanged: "avatarChanged",
+  limitMicEnabled: "limitMicEnabled",
 };
 
 const logMessages = defineMessages({
@@ -274,6 +275,10 @@ const logMessages = defineMessages({
   [LogMessageType.avatarChanged]: {
     id: "chat-sidebar.log-message.avatar-changed",
     defaultMessage: "Your avatar has been changed."
+  },
+  [LogMessageType.limitMicEnabled]: {
+    id: "chat-sidebar.log-message.limit-mic-enabled",
+    defaultMessage: "The voice chat room is full."
   }
 });
 
