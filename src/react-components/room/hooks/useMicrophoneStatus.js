@@ -58,7 +58,7 @@ export function useMicrophoneStatus(scene) {
       return;
     }
 
-    if (enabledMicUsers >= 1) {
+    if (enabledMicUsers >= 5) {
       APP.messageDispatch.log("limitMicEnabled");
       return;
     }
