@@ -1,8 +1,6 @@
-import { guessContentType } from "../utils/media-url-utils";
-import { handleExitTo2DInterstitial } from "../utils/vr-interstitial";
-
 AFRAME.registerComponent("inline-frame-button", {
   schema: {
+    name: { default: "" },
     src: { default: "" },
     frameOption: { default: "" }
   },
@@ -10,30 +8,24 @@ AFRAME.registerComponent("inline-frame-button", {
   init() {
     this.label = this.el.querySelector("[text]");
 
-    this.updateSrc = async () => {
-      if (!this.targetEl.parentNode) return; // If removed
-      const mediaLoader = this.targetEl.components["media-loader"].data;
-      const src = (this.src = (mediaLoader.mediaOptions && mediaLoader.mediaOptions.href) || mediaLoader.src);
-      const visible = src && guessContentType(src) !== "video/vnd.hubs-webrtc";
-
-      this.el.object3D.visible = !!visible;
-
-      if (visible) {
-        let label = "Open frame";
-        this.label.setAttribute("text", "value", label);
-      }
-    };
-
     this.onClick = async () => {
-      // const exitImmersive = async () => await handleExitTo2DInterstitial(false, () => {}, true);
-      // await exitImmersive();
-      window.dispatchEvent(new CustomEvent("inline-url", { detail: { url: this.data.src, option: this.data.frameOption } }))
+      const thisSrcParams = new URL(this.data.src).search;
+      const thisSearchParams = new URLSearchParams(thisSrcParams);
+      const params = window.location.search;
+      const searchParams = new URLSearchParams(params);
+      window.dispatchEvent(new CustomEvent("inline-url", {
+         detail: {
+           url: searchParams.get(this.data.name) 
+           ? `${this.data.src}${thisSearchParams.size > 0 ? "&" : "?"}token=${searchParams.get(this.data.name)}` 
+           : this.data.src, 
+           option: this.data.frameOption 
+          } 
+        }
+      ))
     };
 
     NAF.utils.getNetworkedEntity(this.el).then(networkedEl => {
       this.targetEl = networkedEl;
-      this.targetEl.addEventListener("media_resolved", this.updateSrc, { once: true });
-      this.updateSrc();
     });
   },
 

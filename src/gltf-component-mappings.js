@@ -136,10 +136,10 @@ AFRAME.GLTFModelPlus.registerComponent("waypoint", "waypoint", (el, componentNam
 import { findAncestorWithComponent } from "./utils/scene-graph";
 import { createElementEntity } from "./utils/jsx-entity";
 import { setInitialNetworkedData } from "./utils/assign-network-ids";
+import { guessContentType } from "./utils/media-url-utils";
 /** @jsx createElementEntity */ createElementEntity;
 
 AFRAME.GLTFModelPlus.registerComponent("media-frame", "media-frame", (el, _componentName, componentData) => {
-  // eslint-disable-next-line react/no-unknown-property
   const eid = renderAsEntity(APP.world, <entity mediaFrame={componentData} />);
 
   addComponent(APP.world, Networked, eid);
@@ -190,7 +190,7 @@ AFRAME.GLTFModelPlus.registerComponent("media", "media", (el, componentName, com
   }
 });
 
-async function mediaInflator(el, componentName, componentData, components, fitToBox = true) {
+async function mediaInflator(el, componentName, componentData, components) {
   let isControlled = true;
 
   if (componentName === "link" && (components.video || components.image)) {
@@ -273,7 +273,7 @@ async function mediaInflator(el, componentName, componentData, components, fitTo
 
   el.setAttribute("media-loader", {
     src: sanitizeUrl(src),
-    fitToBox,
+    fitToBox: true,
     resolve: true,
     fileIsOwned: true,
     animate: false,
@@ -282,51 +282,48 @@ async function mediaInflator(el, componentName, componentData, components, fitTo
   });
 }
 
-const mediaInflatorNoResize = (el, componentName, componentData, components) =>
-  mediaInflator(el, componentName, componentData, components, false);
-
-AFRAME.GLTFModelPlus.registerComponent("model", "model", mediaInflatorNoResize);
-AFRAME.GLTFModelPlus.registerComponent("image", "image", mediaInflatorNoResize);
-AFRAME.GLTFModelPlus.registerComponent("audio", "audio", mediaInflatorNoResize, (name, property, value) => {
+AFRAME.GLTFModelPlus.registerComponent("model", "model", mediaInflator);
+AFRAME.GLTFModelPlus.registerComponent("image", "image", mediaInflator);
+AFRAME.GLTFModelPlus.registerComponent("audio", "audio", mediaInflator, (name, property, value) => {
   if (property === "paused") {
     return { name: "video-pause-state", property, value };
   } else {
     return null;
   }
 });
-AFRAME.GLTFModelPlus.registerComponent("video", "video", mediaInflatorNoResize, (name, property, value) => {
+AFRAME.GLTFModelPlus.registerComponent("video", "video", mediaInflator, (name, property, value) => {
   if (property === "paused") {
     return { name: "video-pause-state", property, value };
   } else {
     return null;
   }
 });
-AFRAME.GLTFModelPlus.registerComponent("link", "link", mediaInflatorNoResize);
-AFRAME.GLTFModelPlus.registerComponent(
-  "inline-frame",
-  "inline-frame",
-  async (el, componentName, componentData, components) => {
-    el.setAttribute("networked", {
-      template: "#static-controlled-media",
-      owner: "scene",
-      persistent: true,
-      networkId: components.networked.id
-    });
+AFRAME.GLTFModelPlus.registerComponent("link", "link", mediaInflator);
+AFRAME.GLTFModelPlus.registerComponent("inline-frame", "inline-frame", async (el, componentName, componentData, components) => {
+  el.setAttribute("networked", {
+    template: "#inline-static-controlled-media",
+    owner: "scene",
+    persistent: true,
+    networkId: components.networked.id
+  });
 
-    el.setAttribute("media-loader", {
-      src: sanitizeUrl(componentData.src),
-      frameOption: componentData.frameOption,
-      resolve: true,
-      fileIsOwned: true,
-      animate: false,
-      moveTheParentNotTheMesh: true
-    });
+  el.setAttribute(
+    "media-image",
+    Object.assign({}, componentData.mediaOptions, {
+      src: componentData.imageURL,
+      version: 1,
+      contentType: guessContentType(componentData.imageURL) || "image/png"
+    })
+  );
 
-    el.setAttribute("inner-thumbnail", componentData.imageURL);
-
-    el.setAttribute("inner-frame", "true");
-  }
-);
+  el.setAttribute("hover-menu__link", { template: "#inline-hover-menu", isFlat: true });
+  el.childNodes.forEach((child) => {
+      if (child.id === 'inline-wrapper') {
+        child.childNodes[1].setAttribute("id", componentData.name);
+        child.childNodes[1].setAttribute("inline-frame-button", `name: ${componentData.name}; src: ${componentData.src}; frameOption: ${componentData.frameOption};`);
+      }
+  });
+});
 
 AFRAME.GLTFModelPlus.registerComponent("hoverable", "is-remote-hover-target", el => {
   el.setAttribute("is-remote-hover-target", "");
