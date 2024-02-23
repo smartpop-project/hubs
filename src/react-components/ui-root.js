@@ -1538,43 +1538,40 @@ class UIRoot extends Component {
                 viewport={
                   <>
                     {this.state.mainInnerFrame && (
-                      <div
-                        id="viewport-inline"
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          top: 0,
-                          width: "100%",
-                          height: "100%",
-                          zIndex: 10
-                        }}
+                      <div 
+                      id="viewport-inline" 
+                      style={{
+                        position:'absolute', 
+                        left:0, 
+                        top:0, 
+                        width: "100%",
+                        height: "100%",
+                        zIndex: 10,
+                      }}
                       >
                         <div
-                          style={{
-                            width: "100%",
-                            height: "48px",
-                            display: "flex",
-                            alignItems: "center",
-                            padding: "0 1rem",
-                            borderBottom: "1px solid #eee",
-                            backgroundColor: "#fff"
-                          }}
-                        >
-                          <BackButton
-                            onClick={() => {
-                              this.setState({ mainInnerFrame: false });
-                              this.setSidebar();
-                            }}
-                          />
+                          style={{ 
+                            width: '100%', 
+                            height: '48px', 
+                            display:'flex', 
+                            alignItems: 'center', 
+                            padding: '0 1rem', 
+                            borderBottom: '1px solid #eee', 
+                            backgroundColor: '#fff' 
+                          }}>
+                            <BackButton onClick={() => {
+                              this.setState({ mainInnerFrame: false })
+                              this.setSidebar()
+                            }} />
                         </div>
                         <iframe
                           src={this.state.innerFrameURL}
-                          style={{
-                            width: "100%",
-                            height: "calc(100% - 48px)",
-                            outline: "none",
-                            border: "none"
-                          }}
+                          style={{ 
+                              width: '100%', 
+                              height: 'calc(100% - 48px)',
+                              outline: 'none',
+                              border: 'none',
+                            }}
                         ></iframe>
                       </div>
                     )}
@@ -1589,9 +1586,9 @@ class UIRoot extends Component {
                            * ?funcs=object-button
                            * funcs 에 object-button 이 있으면 오브젝트 리스트를 보여줌
                            */
-
-                          // showObjectList
-                          (this.state["object-button"] || objectButton) && (
+                          
+                          // showObjectList 
+                          (this.state['object-button'] || objectButton) && (
                             <ObjectsMenuButton
                               active={this.state.sidebarId === "objects"}
                               onClick={() => this.toggleSidebar("objects")}
@@ -1772,16 +1769,7 @@ class UIRoot extends Component {
                           title={<FormattedMessage id="room-settings-sidebar.iframe" defaultMessage="Room Settings" />}
                           beforeTitle={<BackButton onClick={() => this.setSidebar()} />}
                         >
-                          <iframe
-                            src={this.state.innerFrameURL}
-                            style={{
-                              position: "absolute",
-                              width: "100%",
-                              height: "100%",
-                              backgroundColor: "transparent",
-                              border: "none"
-                            }}
-                          ></iframe>
+                          <iframe src={this.state.innerFrameURL} style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'transparent', border: 'none'}}></iframe>
                         </IframeSidebar>
                       )}
                     </>
@@ -1795,7 +1783,7 @@ class UIRoot extends Component {
                  */
                 toolbarLeft={
                   <>
-                    {(this.state["invitation-button"] || invitation) && (
+                    {(this.state['invitation-button'] || invitation) && (
                       <InvitePopoverContainer
                         hub={this.props.hub}
                         hubChannel={this.props.hubChannel}
@@ -1803,7 +1791,6 @@ class UIRoot extends Component {
                         store={this.props.store}
                       />
                     )}
-                    {isLockedDownDemo && <SeePlansCTA />}
                   </>
                 }
                 toolbarCenter={
@@ -1846,18 +1833,17 @@ class UIRoot extends Component {
                             />
                           )
                         }
-                        {!isLockedDownDemo && !isMute && <AudioPopoverButtonContainer scene={this.props.scene} />}
-                        {!isLockedDownDemo &&
-                          (shareScreenPermitted || this.props.hubChannel.canOrWillIfCreator("grant_share_screen")) && (
-                            <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />
-                          )}
+                        {!isLockedDownDemo && !isMute && <AudioPopoverButtonContainer presences={this.props.presences} scene={this.props.scene} />}
+                        {!isLockedDownDemo && (shareScreenPermitted || this.props.hubChannel.canOrWillIfCreator("grant_share_screen")) && (
+                          <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />
+                        )}
                         {
                           /**
                            * belivvr custom
                            * funcs=place-button
                            * funcs 에 place-button 이 있으면 방꾸미기 버튼(오브젝트, 그리기 등등) 을 보여줌
                            */
-                          (this.state["place-button"] || placeButton) && (
+                          (this.state['place-button'] || placeButton) && (
                             <PlacePopoverContainer
                               scene={this.props.scene}
                               hubChannel={this.props.hubChannel}
@@ -1872,23 +1858,24 @@ class UIRoot extends Component {
                            * funcs=camera-button
                            * funcs 에 camera-button 이 있으면 사진찍기 버튼 추가
                            */
-                          (this.state["camera-button"] || camera) && (
-                            <ToolbarButton
-                              key="cameara"
-                              icon={<CameraIcon />}
-                              preset="accent5"
-                              onClick={() => this.props.scene.emit("action_toggle_camera")}
-                              label={<FormattedMessage id="place-popover.item-type.camera" defaultMessage="Camera" />}
-                              selected={!!anyEntityWith(APP.world, MyCameraTool)}
-                            />
-                          )
+                          (this.state['camera-button'] || camera) && 
+                            (
+                              <ToolbarButton
+                                key="cameara"
+                                icon={<CameraIcon />}
+                                preset="accent5"
+                                onClick={() => this.props.scene.emit("action_toggle_camera")}
+                                label={<FormattedMessage id="place-popover.item-type.camera" defaultMessage="Camera" />}
+                                selected={!!anyEntityWith(APP.world, MyCameraTool)}
+                              />
+                            )
                         }
-                        {this.props.hubChannel.can("spawn_emoji") && (
+                        {
                           <ReactionPopoverContainer
                             scene={this.props.scene}
                             initialPresence={getPresenceProfileForSession(this.props.presences, this.props.sessionId)}
                           />
-                        )}
+                        }
                       </>
                     )}
                     {!isLockedDownDemo && (
@@ -1910,8 +1897,7 @@ class UIRoot extends Component {
                             const cameraMode = AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode;
 
                             if (cameraMode === CAMERA_MODE_FIRST_PERSON) {
-                              AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode =
-                                CAMERA_MODE_THIRD_PERSON_VIEW;
+                              AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode = CAMERA_MODE_THIRD_PERSON_VIEW;
                             }
 
                             if (cameraMode === CAMERA_MODE_THIRD_PERSON_VIEW) {
@@ -1953,16 +1939,10 @@ class UIRoot extends Component {
                           icon={<LeaveIcon />}
                           label={<FormattedMessage id="toolbar.leave-room-button" defaultMessage="Leave" />}
                           preset="cancel"
-                          selected={!!this.state.leaving}
                           onClick={() => {
-                            this.setState({ leaving: true });
                             this.showNonHistoriedDialog(LeaveRoomModal, {
-                              destinationUrl: "/",
-                              reason: LeaveReason.leaveRoom,
-                              onClose: () => {
-                                this.setState({ leaving: false });
-                                this.closeDialog();
-                              }
+                              destinationUrl: this.state.returnUrl,
+                              reason: LeaveReason.leaveRoom
                             });
                           }}
                         />
@@ -1974,24 +1954,18 @@ class UIRoot extends Component {
                        * funcs=more-button
                        * funcs 에 more-button 이 있으면 더보기 버튼을 보여줌
                        */
-                      (this.state["more-button"] || moreButton) && <MoreMenuPopoverButton menu={moreMenu} />
+                      (this.state['more-button'] || moreButton) && (
+                        <MoreMenuPopoverButton menu={moreMenu} />
+                      )
                     }
                   </>
                 }
               />
             )}
           </div>
-          {this.props.showBitECSBasedClientRefreshPrompt && (
-            <div className={styles.bitecsBasedClientRefreshPrompt}>
-              <FormattedMessage
-                id="ui-root.bitecs-based-client-refresh-prompt"
-                defaultMessage="This page will be reloaded in five seconds because the room owner toggled the bitECS based client activation flag."
-              />
-            </div>
-          )}
         </ReactAudioContext.Provider>
       </MoreMenuContextProvider>
-    );
+    )
   }
 }
 

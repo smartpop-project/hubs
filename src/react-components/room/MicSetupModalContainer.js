@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 import { MicSetupModal } from "./MicSetupModal";
 import { useMicrophoneStatus } from "./hooks/useMicrophoneStatus";
@@ -26,9 +26,16 @@ export function MicSetupModalContainer({ scene, ...rest }) {
   const onChangeMicrophoneMuted = useCallback(({ target: { checked: muted } }) => {
     setIsMicMutedOnEntry(muted);
     APP.store.update({
-      preferences: { muteMicOnEntry: muted }
+      preferences: { muteMicOnEntry: true }
     });
   }, []);
+
+  useEffect(() => {
+      setIsMicMutedOnEntry(true);
+      APP.store.update({
+        preferences: { muteMicOnEntry: true }
+      });
+  }, [])
 
   return (
     <MicSetupModal
