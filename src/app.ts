@@ -233,9 +233,25 @@ export class App {
     sceneEl.addEventListener("loaded", () => {
       waitForPreloads().then(() => {
         this.world.time.elapsed = performance.now();
-        renderer.setAnimationLoop(function (_rafTime, xrFrame) {
-          mainTick(xrFrame, renderer, scene, camera);
-        });
+
+        const isBot = qsTruthy("allow_idle")
+
+        if (isBot) {
+          let lastTime = Date.now()
+          renderer.setAnimationLoop(function (_rafTime, xrFrame) {
+            const currentTime = Date.now();
+
+            if (currentTime - lastTime > 1000) {
+              mainTick(xrFrame, renderer, scene, camera);
+              lastTime = currentTime
+            }
+          });
+        } else {
+          renderer.setAnimationLoop(function (_rafTime, xrFrame) {
+            mainTick(xrFrame, renderer, scene, camera);
+          });
+        }
+
         sceneEl.renderStarted = true;
       });
     });
