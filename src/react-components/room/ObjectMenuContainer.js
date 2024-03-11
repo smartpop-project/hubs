@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { ObjectMenu, ObjectMenuButton } from "./ObjectMenu";
 import { useObjectList } from "./hooks/useObjectList";
@@ -62,11 +62,20 @@ function ObjectMenuItems({ hubChannel, scene, activeObject, deselectObject, onGo
   const { canPin, isPinned, togglePinned } = usePinObject(hubChannel, scene, activeObject);
   const { canRemoveObject, removeObject } = useRemoveObject(hubChannel, scene, activeObject);
   const { canGoTo, goToSelectedObject } = useGoToSelectedObject(scene, activeObject);
+  const [isAdminRole, setIsAdminRole] = useState(false);
   const url = getObjectUrl(activeObject);
+
+  useEffect(() => {
+    activeObject.el.object3D.children.forEach((item) => {
+      if (item.type === "Object3D" && item.userData.role === "admin") {
+        setIsAdminRole(true)
+      }
+    })
+  }, [])
 
   return (
     <>
-      <ObjectMenuButton disabled={!canPin} onClick={togglePinned}>
+      <ObjectMenuButton disabled={!canPin || isAdminRole} onClick={togglePinned}>
         <PinIcon />
         <span>
           {isPinned ? (
