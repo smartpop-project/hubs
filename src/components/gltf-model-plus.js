@@ -464,9 +464,11 @@ class GLTFHubsPlugin {
     if (nodes) {
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
-
         if (!node.extras) {
           node.extras = {};
+        }
+        if (parser.json?.asset?.generator === "reticulum") {
+          node.extras.role = node.role;
         }
 
         node.extras.gltfIndex = i;

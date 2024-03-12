@@ -492,9 +492,7 @@ class UIRoot extends Component {
           });
         }
 
-        const link = window.document.querySelector("link[rel*='icon']");
         this.setState({ returnUrl: data.returnUrl });
-        if (link) link.href = data.faviconUrl;
       });
     }
   }
