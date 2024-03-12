@@ -92,6 +92,7 @@ import "./components/leave-room-button";
 import "./components/visible-if-permitted";
 import "./components/visibility-on-content-types";
 import "./components/hide-when-pinned-and-forbidden";
+import "./components/hide-when-pinned-outer-api";
 import "./components/visibility-while-frozen";
 import "./components/stats-plus";
 import "./components/networked-avatar";
