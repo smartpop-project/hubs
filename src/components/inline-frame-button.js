@@ -1,3 +1,5 @@
+import { ACTION_TYPES, getAccountId, logToXRCLOUD } from "../belivvr/logAction";
+
 AFRAME.registerComponent("inline-frame-button", {
   schema: {
     name: { default: "" },
@@ -9,15 +11,24 @@ AFRAME.registerComponent("inline-frame-button", {
     this.label = this.el.querySelector("[text]");
 
     this.onClick = async () => {
-      const thisSrcParams = new URL(this.data.src).search;
-      const thisSearchParams = new URLSearchParams(thisSrcParams);
-      const params = window.location.search;
-      const searchParams = new URLSearchParams(params);
+      const accountId = await getAccountId();
+      const date = new Date();
+      
+      logToXRCLOUD({
+        type: ACTION_TYPES.CLICK,
+        eventTime: date,
+        roomId: window.APP.hubChannel.hubId,
+        userId: accountId,
+        eventAction: `Inline View ${ACTION_TYPES.CLICK}: ${this.data.src}`
+      })
+      .catch(error => {
+        console.error('Error logging event:', error);
+      });
+      
       window.dispatchEvent(new CustomEvent("inline-url", {
          detail: {
-           url: searchParams.get(this.data.name) 
-           ? `${this.data.src}${thisSearchParams.size > 0 ? "&" : "?"}token=${searchParams.get(this.data.name)}` 
-           : this.data.src, 
+           url: this.data.src, 
+           name: this.data.name,
            option: this.data.frameOption 
           } 
         }

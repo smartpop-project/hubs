@@ -2,6 +2,7 @@ import { isLocalHubsUrl, isLocalHubsSceneUrl, isHubsRoomUrl, isLocalHubsAvatarUr
 import { guessContentType } from "../utils/media-url-utils";
 import { handleExitTo2DInterstitial } from "../utils/vr-interstitial";
 import { changeHub } from "../change-hub";
+import { ACTION_TYPES, getAccountId, logToXRCLOUD } from "../belivvr/logAction";
 
 AFRAME.registerComponent("open-media-button", {
   schema: {
@@ -44,6 +45,22 @@ AFRAME.registerComponent("open-media-button", {
       const mayChangeScene = this.el.sceneEl.systems.permissions.canOrWillIfCreator("update_hub");
 
       const exitImmersive = async () => await handleExitTo2DInterstitial(false, () => {}, true);
+      const accountId = await getAccountId();
+      const date = new Date();
+      
+      logToXRCLOUD({
+        type: ACTION_TYPES.CLICK,
+        eventTime: date,
+        roomId: window.APP.hubChannel.hubId,
+        userId: accountId,
+        eventAction: `link ${ACTION_TYPES.CLICK}: ${this.src}`
+      })
+      .then(() => {
+        console.log('Event logged successfully');
+      })
+      .catch(error => {
+        console.error('Error logging event:', error);
+      });
 
       let hubId;
       if (this.data.onlyOpenLink) {

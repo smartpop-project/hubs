@@ -233,7 +233,9 @@ class UIRoot extends Component {
     "place-button": false,
 
     innerFrameURL: "",
-    mainInnerFrame: false
+    mainInnerFrame: false,
+    linkPayload: null,
+    linkPayloadToken: null,
   };
 
   constructor(props) {
@@ -248,7 +250,6 @@ class UIRoot extends Component {
 
   componentDidUpdate(prevProps) {
     const { hubChannel, showSignInDialog } = this.props;
-
     if (hubChannel) {
       const { signedIn } = hubChannel;
       if (signedIn !== this.state.signedIn) {
@@ -467,7 +468,8 @@ class UIRoot extends Component {
         }
       }).then(async res => {
         const data = await res.json();
-        const { token, role } = data;
+        const { token, role, linkPayload } = data;
+        this.setState({ linkPayload });
         const store = window.APP.store;
         if (role.toLowerCase() === "host") {
           store.update({ credentials: { token } });
@@ -904,11 +906,13 @@ class UIRoot extends Component {
   };
 
   onInlineFrame = e => {
-    this.setState({ innerFrameURL: e.detail.url });
+    const inlineFrameName = e.detail.name
+    const { linkPayload } = this.state;
+    const parameter = linkPayload?.[inlineFrameName] ?? "";
+    this.setState({ innerFrameURL: parameter ? `${e.detail.url}?hubs_parameter=${parameter}` : e.detail.url });
     if (e.detail.option === "main") {
       this.setState({ mainInnerFrame: true });
-      if (window.innerWidth > 992) this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
-      return;
+      return window.innerWidth > 992 && this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
     }
     if (this.state.sidebarId !== "side-iframe") {
       this.toggleSidebar("side-iframe");
