@@ -502,7 +502,7 @@ export class CameraSystem {
          * 1인칭 시에 내 머리 속이 보이는 걸 해결하기 위해 위치 조정
          * -0.15 만큼 미세하게 내가 앞으로 가있게 함.
          */
-        tmpMat.makeTranslation(0, 0, -0.15);
+        tmpMat.makeTranslation(0, 0, -0.4);
         this.avatarRig.object3D.updateMatrices();
         setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);
         if (scene.is("vr-mode")) {
@@ -518,8 +518,8 @@ export class CameraSystem {
         } else {
           this.avatarPOV.object3D.updateMatrices();
           this.avatarPOV.object3D.matrixWorld.decompose(position, quat, scale);
-          tmpMat.compose(position, quat, V_ONE);
-          setMatrixWorld(this.viewingCamera, tmpMat);
+          // tmpMat.compose(position, quat, V_ONE);
+          setMatrixWorld(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.multiply(tmpMat));
         }
       } else if (this.mode === CAMERA_MODE_THIRD_PERSON_NEAR || this.mode === CAMERA_MODE_THIRD_PERSON_FAR) {
         if (this.mode === CAMERA_MODE_THIRD_PERSON_NEAR) {
