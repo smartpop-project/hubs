@@ -500,9 +500,16 @@ export class CameraSystem {
         /**
          * belivvr custom
          * 1인칭 시에 내 머리 속이 보이는 걸 해결하기 위해 위치 조정
-         * -0.15 만큼 미세하게 내가 앞으로 가있게 함.
+         * 달리기면 카메라를 더 앞으로 내민다.
          */
-        tmpMat.makeTranslation(0, 0, -0.4);
+        const userinput = scene.systems.userinput
+        const vector = userinput.get(paths.actions.characterAcceleration);
+        const boost = userinput.get(paths.actions.boost);
+        const [right, front] = vector;
+        const isRunning = boost || 1 < Math.abs(right) || 1 < Math.abs(front)
+
+        tmpMat.makeTranslation(0, 0, isRunning ? -1 : -0.4);
+
         this.avatarRig.object3D.updateMatrices();
         setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);
         if (scene.is("vr-mode")) {
