@@ -315,6 +315,7 @@ export class CameraSystem {
     let preventAudioBoost;
 
     if (shouldUseNewLoader()) {
+      // TODO Add when avatar is migrated
       preventAudioBoost = false;
     } else {
       preventAudioBoost = inspectable.el && isTagged(inspectable.el, "preventAudioBoost");
@@ -496,24 +497,23 @@ export class CameraSystem {
 
       if (this.mode === CAMERA_MODE_FIRST_PERSON) {
         this.viewingCameraRotator.on = false;
-        if(!scene.is("vr-mode")){
-            /**
+        /**
          * belivvr custom
          * 1인칭 시에 내 머리 속이 보이는 걸 해결하기 위해 위치 조정
          * 달리기면 카메라를 더 앞으로 내민다.
          */
-          const userinput = scene.systems.userinput
-          const vector = userinput.get(paths.actions.characterAcceleration);
-          const boost = userinput.get(paths.actions.boost);
-          const [right, front] = vector;
-          const isRunning = boost || 1 < Math.abs(right) || 1 < Math.abs(front)
-  
-          tmpMat.makeTranslation(0, 0, isRunning ? -1 : -0.4);
-        }
+        const userinput = scene.systems.userinput
+        const vector = userinput.get(paths.actions.characterAcceleration);
+        const boost = userinput.get(paths.actions.boost);
+        const [right, front] = vector;
+        const isRunning = boost || 1 < Math.abs(right) || 1 < Math.abs(front)
+
+        tmpMat.makeTranslation(0, 0, isRunning ? -1 : -0.4);
+
         this.avatarRig.object3D.updateMatrices();
         setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);
         if (scene.is("vr-mode")) {
-                 /**
+          /**
            * belivvr custom
            * VR 환경에서는 3인칭이 필요 없고 머리가 존재하면 안되므로
            * 머리크기를 줄여서 없는것과 동일시 만들음.
@@ -525,6 +525,7 @@ export class CameraSystem {
         } else {
           this.avatarPOV.object3D.updateMatrices();
           this.avatarPOV.object3D.matrixWorld.decompose(position, quat, scale);
+          // tmpMat.compose(position, quat, V_ONE);
           setMatrixWorld(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.multiply(tmpMat));
         }
       } else if (this.mode === CAMERA_MODE_THIRD_PERSON_NEAR || this.mode === CAMERA_MODE_THIRD_PERSON_FAR) {
@@ -588,16 +589,17 @@ export class CameraSystem {
           );
         }
       } else if (this.mode === CAMERA_MODE_THIRD_PERSON_VIEW) {
-         /**
+        /**
          * belivvr custom
          * 3인칭 구현 코드
          */
-        this.viewingCameraRotator.on = false;      
+        this.viewingCameraRotator.on = false;
         /**
-        * belivvr custom
-        * 추후 3인칭 간격 조정을 할 때에 아래의
-        * makeTranslation 의 z 값을 조정하면 된다.
-        */        tmpMat.makeTranslation(0, 0, 2);
+         * belivvr custom
+         * 추후 3인칭 간격 조정을 할 때에 아래의
+         * makeTranslation 의 z 값을 조정하면 된다.
+         */
+        tmpMat.makeTranslation(0, 0, 2);
         this.avatarRig.object3D.updateMatrices();
         setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);
         if (scene.is("vr-mode")) {
@@ -607,6 +609,7 @@ export class CameraSystem {
           this.avatarPOV.object3D.updateMatrices();
           setMatrixWorld(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.multiply(tmpMat));
         }
+
         /**
          * belivvr custom
          * 아바타의 위치와 룸 안에서 카메라 위치를 카피해서 동일시 하고
@@ -621,4 +624,3 @@ export class CameraSystem {
     };
   })();
 }
-
