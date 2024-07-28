@@ -906,18 +906,25 @@ class UIRoot extends Component {
   };
 
   onInlineFrame = e => {
-    const inlineFrameName = e.detail.name
+    // [Belivvr Custom] InlineView is SPOKE's component name based InlineFrame.
+    // The component in Spoke uses the name 'inlineview' instead of the keyword 'inlineframe' to avoid confusion.
+    const inlineViewName = e.detail.name;
     const { linkPayload } = this.state;
-    const parameter = linkPayload?.[inlineFrameName] ?? "";
-    this.setState({ innerFrameURL: parameter ? `${e.detail.url}?hubs_parameter=${parameter}` : e.detail.url });
+    // Only set parameter if linkPayload exists, otherwise set to an empty string
+    const parameter = linkPayload || "";
+    const url = new URL(e.detail.url);
+    url.searchParams.set('hubsParam', parameter);
+    url.searchParams.set('inlineViewName', inlineViewName);
+    this.setState({ innerFrameURL: url.toString() });
     if (e.detail.option === "main") {
-      this.setState({ mainInnerFrame: true });
-      return window.innerWidth > 992 && this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
+        this.setState({ mainInnerFrame: true });
+        return window.innerWidth > 992 && this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
     }
     if (this.state.sidebarId !== "side-iframe") {
-      this.toggleSidebar("side-iframe");
+        this.toggleSidebar("side-iframe");
     }
-  };
+};
+
 
   renderInterstitialPrompt = () => {
     return (
