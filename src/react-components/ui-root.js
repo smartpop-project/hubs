@@ -234,6 +234,7 @@ class UIRoot extends Component {
 
     innerFrameURL: "",
     mainInnerFrame: false,
+    selfWindow: false, 
     linkPayload: null,
     linkPayloadToken: null,
   };
@@ -471,7 +472,7 @@ class UIRoot extends Component {
         const { token, role, linkPayload } = data;
         this.setState({ linkPayload });
         const store = window.APP.store;
-        if (role.toLowerCase() === "host") {
+        if (role && typeof role === "string" && role.toLowerCase() === "host") {
           store.update({ credentials: { token } });
         } else {
           store.update({ credentials: { token: "" } });
@@ -915,15 +916,29 @@ class UIRoot extends Component {
     const url = new URL(e.detail.url);
     url.searchParams.set('hubsParam', parameter);
     url.searchParams.set('inlineViewName', inlineViewName);
-    this.setState({ innerFrameURL: url.toString() });
-    if (e.detail.option === "main") {
-        this.setState({ mainInnerFrame: true });
-        return window.innerWidth > 992 && this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
-    }
-    if (this.state.sidebarId !== "side-iframe") {
-        this.toggleSidebar("side-iframe");
-    }
-};
+    
+    // setState 후 콜백에서 window.open 호출
+    this.setState({ innerFrameURL: url.toString() }, () => {   
+        switch (e.detail.option) {
+          case "main":
+            this.setState({ mainInnerFrame: true });
+            return window.innerWidth > 992 && this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false });
+          case "sideView":
+            if (this.state.sidebarId !== "side-iframe") {
+              this.toggleSidebar("side-iframe");
+            }
+            break;
+          case "selfWindow":
+            this.setState({ selfWindow: true });
+            break;
+          case "newWindow":
+            // URL을 바로 전달하여 새 창에 로드되도록 수정
+            window.open(this.state.innerFrameURL, '_blank');
+            return;
+        }
+  });
+  }
+  
 
 
   renderInterstitialPrompt = () => {
@@ -1097,6 +1112,12 @@ class UIRoot extends Component {
     const isGhost =
       configs.feature("enable_lobby_ghosts") && (this.state.watching || this.state.hide || this.props.hide);
     const hide = this.state.hide || this.props.hide;
+    const { selfWindow, innerFrameURL } = this.state;
+
+    if (selfWindow) {
+      window.location.href = innerFrameURL;
+      return null; 
+    }
 
     const rootStyles = {
       [styles.ui]: true,
@@ -1105,6 +1126,7 @@ class UIRoot extends Component {
       isGhost,
       hide
     };
+
     if (this.state.isRecordingMode) {
       return (
         <div className={classNames(rootStyles)}>
