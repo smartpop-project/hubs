@@ -496,20 +496,31 @@ export class CameraSystem {
 
       if (this.mode === CAMERA_MODE_FIRST_PERSON) {
         this.viewingCameraRotator.on = false;
-        if(!scene.is("vr-mode")){
-            /**
-         * belivvr custom
-         * 1인칭 시에 내 머리 속이 보이는 걸 해결하기 위해 위치 조정
-         * 달리기면 카메라를 더 앞으로 내민다.
-         */
-          const userinput = scene.systems.userinput
+        if (!scene.is("vr-mode")) {
+          /**
+           * belivvr custom
+           * 1인칭 시에 내 머리 속이 보이는 걸 해결하기 위해 위치 조정
+           * 달리기면 카메라를 더 앞으로 내민다.
+           */
+          const userinput = scene.systems.userinput;
+      
+          // characterAcceleration이 정의되지 않은 경우 카메라 이동 처리 하지 않음
           const vector = userinput.get(paths.actions.characterAcceleration);
-          const boost = userinput.get(paths.actions.boost);
-          const [right, front] = vector;
-          const isRunning = boost || 1 < Math.abs(right) || 1 < Math.abs(front)
-  
-          tmpMat.makeTranslation(0, 0, isRunning ? -1 : -0.4);
-        }
+          const boost = userinput.get(paths.actions.boost) || false;
+      
+          // vector가 정상적으로 정의된 경우에만 처리
+          if (vector && Array.isArray(vector) && vector.length >= 2) {
+              const [right, front] = vector;
+      
+              // 달리기 상태인지 확인
+              const isRunning = boost || 1 < Math.abs(right) || 1 < Math.abs(front);
+      
+              // isRunning에 따라 카메라 이동
+              tmpMat.makeTranslation(0, 0, isRunning ? -1 : -0.4);
+          } else {
+              console.warn("Vector is undefined or invalid. Camera movement skipped.");
+          }
+      }
         this.avatarRig.object3D.updateMatrices();
         setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);
         if (scene.is("vr-mode")) {
