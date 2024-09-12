@@ -137,7 +137,7 @@ class UIRoot extends Component {
     onSendMessage: PropTypes.func,
     disableAutoExitOnIdle: PropTypes.bool,
     forcedVREntryType: PropTypes.string,
-    isBotMode: PropTypes.bool,
+    isBotMode: PropTypes.bool,    
     store: PropTypes.object,
     mediaSearchStore: PropTypes.object,
     scene: PropTypes.object,
@@ -223,7 +223,7 @@ class UIRoot extends Component {
     chatPrefix: "",
     chatAutofocus: false,
     returnUrl: "",
-    isHost: false,
+      
 
     "camera-button": false,
     "invitation-button": false,
@@ -473,13 +473,15 @@ class UIRoot extends Component {
         this.setState({ linkPayload });
         const store = window.APP.store;
         if (role && typeof role === "string" && role.toLowerCase() === "host") {
+          this.setState({ showShareDialog:true });
           store.update({ credentials: { token } });
         } else {
+          this.setState({ showShareDialog:false });
           store.update({ credentials: { token: "" } });
         }
 
         if (data.funcs) {
-          const funcNames = [
+          const funcNames = [            
             "camera-button",
             "invitation-button",
             "left-button",
@@ -690,6 +692,7 @@ class UIRoot extends Component {
   enter2D = async () => {
     console.log("Entering in 2D mode");
     await this.performDirectEntryFlow(false);
+
   };
 
   enterVR = async () => {
@@ -977,7 +980,8 @@ class UIRoot extends Component {
         <RoomEntryModal
           roomName={this.props.hub.name}
           showJoinRoom={!this.state.waitingOnAudio && !this.props.entryDisallowed}
-          onJoinRoom={() => {
+          onJoinRoom={() => {            
+
             if (isLockedDownDemo) {
               if (this.props.forcedVREntryType?.startsWith("vr")) {
                 this.setState({ enterInVR: true }, this.onAudioReadyButton);
@@ -1108,7 +1112,7 @@ class UIRoot extends Component {
     return userFromPresence(selectedUserId, presence, micPresences, this.props.sessionId);
   }
 
-  render() {
+  render() {        
     const isGhost =
       configs.feature("enable_lobby_ghosts") && (this.state.watching || this.state.hide || this.props.hide);
     const hide = this.state.hide || this.props.hide;
@@ -1190,7 +1194,7 @@ class UIRoot extends Component {
 
     if (this.props.showInterstitialPrompt) return this.renderInterstitialPrompt();
 
-    const isMute = this.state.isMute;
+    const isMute = this.state.isMute;    
     const shareScreenPermitted = this.state.shareScreenPermitted;
     const entered = this.state.entered;
     const watching = this.state.watching;
@@ -1232,7 +1236,7 @@ class UIRoot extends Component {
               <ProfileEntryPanel
                 {...props}
                 containerType="modal"
-                displayNameOverride={displayNameOverride}
+                displayNameOverride={displayNameOverride}          
                 finished={() => {
                   if (this.props.forcedVREntryType) {
                     this.pushHistoryState();
@@ -1487,16 +1491,31 @@ class UIRoot extends Component {
      * belivvr custom
      * 하단 버튼 추가를 위해 ?funcs=를 확인하는 코드
      */
-    const qsFuncs = new URLSearchParams(location.search).get("funcs")?.split(",");
-    const is3rd = qsFuncs?.some(str => str === "3rd-view");
-    const leftButton = qsFuncs?.some(str => str === "left-button");
-    const moreButton = qsFuncs?.some(str => str === "more-button");
-    const objectButton = qsFuncs?.some(str => str === "object-button");
-    const invitation = qsFuncs?.some(str => str === "invitation-button");
-    const placeButton = qsFuncs?.some(str => str === "place-button");
-    const camera = qsFuncs?.some(str => str === "camera-button");
+    // URL에서 funcs 파라미터를 가져오고, 없으면 빈 배열로 처리
+    const qsFuncs = new URLSearchParams(location.search).get("funcs")?.split(",") || [];
 
+    // 각각의 버튼에 대해 조건을 확인하고, 없으면 false로 설정
+    const is3rd = qsFuncs.some(str => str === "3rd-view") || false;
+    const leftButton = qsFuncs.some(str => str === "left-button") || false;
+    const moreButton = qsFuncs.some(str => str === "more-button") || false;
+    const objectButton = qsFuncs.some(str => str === "object-button") || false;
+    const invitation = qsFuncs.some(str => str === "invitation-button") || false;
+    const placeButton = qsFuncs.some(str => str === "place-button") || false;
+    const camera = qsFuncs.some(str => str === "camera-button") || false;
+
+    // mainpage 쿼리 파라미터 가져오기
     const mainpage = new URLSearchParams(location.search).get("mainpage");
+
+    // grant_share_screen이 설정되어있으면, 추가권한 설정  (hub-channel.js에 권한 설정이 있으나 적용이 잘 안되서 여기에 수동 추가, 구조 파악 필요(luke.yang)) 
+    if ((window.APP.store.credentialsAccountId && window.APP.store.credentialsAccountId !== "")) {            
+      this.props.hubChannel._permissions = {
+        ...this.props.hubChannel._permissions, 
+        "grant_share_screen": true,
+        "kick_users": true,
+        "spawn_and_move_media": true
+      };
+    }
+    
     return (
       <MoreMenuContextProvider>
         <ReactAudioContext.Provider value={this.state.audioContext}>
@@ -1864,10 +1883,8 @@ class UIRoot extends Component {
                             />
                           )
                         }
-                        {!isLockedDownDemo && !isMute && <AudioPopoverButtonContainer presences={this.props.presences} scene={this.props.scene} />}
-                        {!isLockedDownDemo && (shareScreenPermitted || this.props.hubChannel.canOrWillIfCreator("grant_share_screen")) && (
-                          <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />
-                        )}
+                        {!isLockedDownDemo && !isMute && <AudioPopoverButtonContainer presences={this.props.presences} scene={this.props.scene} />}                       
+                        <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />                        
                         {
                           /**
                            * belivvr custom

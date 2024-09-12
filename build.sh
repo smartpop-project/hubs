@@ -2,4 +2,4 @@
 set -ex
 cd "$(dirname "$0")"
 
-docker build -t client .
+docker build --no-cache -t client .

@@ -17,7 +17,7 @@ export default class ProfileEntryPanel extends Component {
     history: PropTypes.object,
     avatarId: PropTypes.string,
     onClose: PropTypes.func,
-    onBack: PropTypes.func,
+    onBack: PropTypes.func,    
     showBackButton: PropTypes.bool
   };
 
@@ -32,8 +32,9 @@ export default class ProfileEntryPanel extends Component {
     pronouns: null
   };
 
-  constructor(props) {
+  constructor(props) {    
     super(props);
+    
     this.state = this.getStateFromProfile();
     if (props.avatarId) {
       this.state.avatarId = props.avatarId;
@@ -97,7 +98,7 @@ export default class ProfileEntryPanel extends Component {
     // This handles editing avatars in the entry_step, since this component remains mounted with the same avatarId
     this.scene.addEventListener("action_avatar_saved", this.refetchAvatar);
 
-    this.refetchAvatar();
+    this.refetchAvatar();         
   }
 
   componentDidUpdate(_prevProps, prevState) {
@@ -106,10 +107,9 @@ export default class ProfileEntryPanel extends Component {
     }
 
     if (prevState.avatar !== this.state.avatar) {
-      const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");
-      const isBot = funcs?.some(str => str === "bot");
-
-      if (isBot) {
+      const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");      
+      const isfastEntry = (funcs?.some(str => str === "bot") || funcs?.some(str => str === "fastEntry"));
+      if (isfastEntry) {
         this.saveStateAndFinish();
       }
     }

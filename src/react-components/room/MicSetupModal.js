@@ -52,9 +52,9 @@ export function MicSetupModal({
 
   React.useEffect(() => {
     const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");
-    const isBot = funcs?.some(str => str === "bot");
+    const isfastEntry = (funcs?.some(str => str === "bot") || funcs?.some(str => str === "fastEntry"));
 
-    if (isBot) {
+    if (isfastEntry) {
       onEnterRoom();
     }
 

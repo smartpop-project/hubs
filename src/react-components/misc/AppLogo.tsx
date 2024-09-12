@@ -9,7 +9,12 @@ import cnuFavicon from "../../assets/images/cnu-favicon.png";
 
 export function AppLogo({ className }: { className?: string }) {
   const [projectLogo, setProjectLogo] = useState('')
-  const logo = useLogo();
+    /* BELIVVR CUSTOM Start
+  *  Ttile : Injection logo img by QueryString and for CNU Custom
+  *  Author : luke.yang
+  *  MOdifyied Date : 2024-09-12
+  */
+  let logo = new URLSearchParams(window.location.search).get("logoImgUrl") || useLogo();
   const shouldDisplayHmcLogo = isHmc() && !logo;
 
   if (document.location.origin === "https://cnumetaxr.jnu.ac.kr:4000") {
@@ -19,6 +24,7 @@ export function AppLogo({ className }: { className?: string }) {
       <img className={className} alt={configs.translation("app-name")} src={cnuLogo} />
     );
   }
+  /* BELIVVR CUSTOM END */
 
   useEffect(() => {
     const roomId = new URLSearchParams(window.location.search).get("private") || new URLSearchParams(window.location.search).get("public")
