@@ -30,14 +30,17 @@ export function RoomEntryModal({
   const breakpoint = useCssBreakpoints();
 
   React.useEffect(() => {
-    const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");      
-    const isfastEntry = (funcs?.some(str => str === "bot") || funcs?.some(str => str === "fastEntry"));
+      const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");      
+      const isfastEntry = (funcs?.some(str => str === "bot") || funcs?.some(str => str === "fastEntry"));    
+      const isGhost = funcs?.some(str => str === "ghost");
 
-    if (isfastEntry) {
-      onJoinRoom();
-    }
+      if (isGhost) {
+        onSpectate();
+      }else if (isfastEntry) {            
+        showJoinRoom ? onJoinRoom() : onSpectate();      
+      }
   }
-    , []);
+   , []);
 
   return (
     <Modal className={classNames(styles.roomEntryModal, className)} disableFullscreen {...rest}>

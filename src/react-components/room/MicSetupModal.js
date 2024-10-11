@@ -53,9 +53,12 @@ export function MicSetupModal({
   React.useEffect(() => {
     const funcs = new URLSearchParams(location.search).get("funcs")?.split(",");
     const isfastEntry = (funcs?.some(str => str === "bot") || funcs?.some(str => str === "fastEntry"));
+    const isGhost = funcs?.some(str => str === "ghost");
 
-    if (isfastEntry) {
-      onEnterRoom();
+    if (isGhost) {
+        onSpectate();
+    }else if (isfastEntry) {            
+        showJoinRoom ? onEnterRoom() : onSpectate();      
     }
 
   }

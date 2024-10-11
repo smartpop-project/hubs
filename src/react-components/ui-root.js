@@ -954,6 +954,7 @@ class UIRoot extends Component {
     );
   };
 
+  // 봇 모드에서는 ui-root에서 오디오와 데이터 입력 받음
   renderBotMode = () => {
     return (
       <div className="loading-panel">
@@ -1833,7 +1834,7 @@ class UIRoot extends Component {
                  */
                 toolbarLeft={
                   <>
-                    {(this.state['invitation-button'] || invitation) && (
+                    {(this.state['invitation-button'] === true || invitation === true) && (
                       <InvitePopoverContainer
                         hub={this.props.hub}
                         hubChannel={this.props.hubChannel}
@@ -1846,13 +1847,7 @@ class UIRoot extends Component {
                 toolbarCenter={
                   <>
                     {watching && (
-                      <>
-                        <ToolbarButton
-                          icon={<EnterIcon />}
-                          label={<FormattedMessage id="toolbar.join-room-button" defaultMessage="Join Room" />}
-                          preset="accept"
-                          onClick={() => this.setState({ watching: false })}
-                        />
+                      <>                    
                         {enableSpectateVRButton && (
                           <ToolbarButton
                             icon={<VRIcon />}
@@ -1980,21 +1975,35 @@ class UIRoot extends Component {
                       /**
                        * belivvr custom
                        * funcs=left-button
-                       * funcs 에 left-button 이 있으면 방나가기 버튼을 보여줌
+                       * funcs 에 left-button 이 있으면 방나가기 버튼을 보여줌, 
+                       * 나가기 버튼은 returnUrl의 쿼리 파라미터로 변경 가능하고, 
                        */
-                      entered && (
-                        <ToolbarButton
-                          icon={<LeaveIcon />}
-                          label={<FormattedMessage id="toolbar.leave-room-button" defaultMessage="Leave" />}
-                          preset="cancel"
-                          onClick={() => {
+                     (entered || watching) && (
+                      <ToolbarButton
+                        icon={<LeaveIcon />}
+                        label={<FormattedMessage id="toolbar.leave-room-button" defaultMessage="Leave" />}
+                        preset="cancel"
+                        onClick={() => {
+                          // URLSearchParams를 사용해 returnUrl 가져오기
+                          const returnUrl = new URLSearchParams(window.location.search).get("returnUrl") || this.state.returnUrl;
+                        //back은 새창의 경우 닫기로 동작함
+                         if (returnUrl === "back") {
                             this.showNonHistoriedDialog(LeaveRoomModal, {
-                              destinationUrl: this.state.returnUrl,
-                              reason: LeaveReason.leaveRoom
+                              destinationUrl: null, 
+                              reason: LeaveReason.leaveRoom,
+                              onClose: false
                             });
-                          }}
-                        />
-                      )
+                          }                       
+                          else {
+                            this.showNonHistoriedDialog(LeaveRoomModal, {
+                              destinationUrl: returnUrl,  
+                              reason: LeaveReason.leaveRoom,
+                            });
+                          }
+                        }}
+                      />
+                    )
+
                     }
                     {
                       /**

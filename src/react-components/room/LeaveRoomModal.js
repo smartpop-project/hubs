@@ -45,6 +45,23 @@ const confirmationMessages = defineMessages({
 export function LeaveRoomModal({ reason, destinationUrl, onClose }) {
   const intl = useIntl();
 
+  const handleLeaveClick = (e) => {
+  if (!destinationUrl) {
+    e.preventDefault(); // a 태그 기본 동작 방지
+
+    if (onClose) {
+      onClose(); // 모달 닫기
+    } else {
+      // history가 1이면 이전 페이지가 없으므로 창 닫기
+      if (window.history.length > 1) {
+        window.history.back(); // 이전 페이지로 이동
+      } else {
+        window.close(); // 이전 페이지가 없으면 창 닫기
+      }
+    }
+  }
+};
+
   return (
     <Modal
       title={<FormattedMessage id="leave-room-modal.title" defaultMessage="Leave Room" />}
@@ -52,7 +69,13 @@ export function LeaveRoomModal({ reason, destinationUrl, onClose }) {
     >
       <Column padding center centerMd="both" grow>
         <p>{intl.formatMessage(reasonMessages[reason])}</p>
-        <Button as="a" preset="cancel" href={destinationUrl} rel="noopener noreferrer">
+        <Button 
+          as="a" 
+          preset="cancel" 
+          href={destinationUrl || "#"} // destinationUrl이 없으면 기본값으로 "#"을 설정
+          rel="noopener noreferrer"
+          onClick={handleLeaveClick} // handleLeaveClick 연결
+        >
           {intl.formatMessage(confirmationMessages[reason])}
         </Button>
       </Column>

@@ -717,9 +717,9 @@ function handleHubChannelJoined(entryManager, hubChannel, messageDispatch, data)
   })();
 }
 
-async function runBotMode(scene, entryManager) {
+async function runBotMode(scene, entryManager, entryDisallowed) {
   console.log("Running in bot mode...");
-  const noop = () => { };
+  const noop = () => {};
   const alwaysFalse = () => false;
   scene.renderer = {
     setAnimationLoop: noop,
@@ -728,10 +728,19 @@ async function runBotMode(scene, entryManager) {
     vr: { isPresenting: alwaysFalse },
     setSize: noop
   };
+  console.log("entryManager enterSceneWhenLoaded");
 
   while (!NAF.connection.isConnected()) await nextTick();
-  entryManager.enterSceneWhenLoaded(false, false);
+
+  // entryDisallowed가 true인 경우, 입장을 막습니다. (looby에 유지)
+  if (!entryDisallowed) {
+    console.log("entryManager enterSceneWhenLoaded");
+    entryManager.enterSceneWhenLoaded(false, false);
+  } else {
+    console.log("Entry disallowed. Not entering the scene.");
+  }
 }
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (!root) {
@@ -1082,7 +1091,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     () => {
       // Replace renderer with a noop renderer to reduce bot resource usage.
       if (isBotMode) {
-        runBotMode(scene, entryManager);
+        runBotMode(scene, entryManager, uiProps.entryDisallowed); // 세 번째 파라미터 추가
       }
     },
     { once: true }
