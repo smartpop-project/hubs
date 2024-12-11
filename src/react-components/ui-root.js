@@ -1936,17 +1936,7 @@ class UIRoot extends Component {
                         <ToolbarButton
                           icon={<VRIcon />}
                           label={<FormattedMessage id="toolbar.camera-view" defaultMessage="3rd person view" />}
-                          onClick={() => {
-                            const cameraMode = AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode;
-
-                            if (cameraMode === CAMERA_MODE_FIRST_PERSON) {
-                              AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode = CAMERA_MODE_THIRD_PERSON_VIEW;
-                            }
-
-                            if (cameraMode === CAMERA_MODE_THIRD_PERSON_VIEW) {
-                              AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.mode = CAMERA_MODE_FIRST_PERSON;
-                            }
-                          }}
+                          onClick={toggleThirdPersonView} // toggleThirdPersonView 함수를 호출하여 모드 전환
                         />
                       )
                     }
@@ -2026,6 +2016,27 @@ class UIRoot extends Component {
   }
 }
 
+// 3인칭 모드 전환 시 pitch-yaw-rotator 재할당
+function toggleThirdPersonView() {
+  const scene = AFRAME.scenes[0];
+  const cameraSystem = scene.systems["hubs-systems"].cameraSystem;  
+
+  if (cameraSystem.mode === CAMERA_MODE_FIRST_PERSON) {
+    // 1인칭 모드에서 3인칭 모드로 전환   
+    cameraSystem.mode = CAMERA_MODE_THIRD_PERSON_VIEW;  
+   
+  } else if (cameraSystem.mode === CAMERA_MODE_THIRD_PERSON_VIEW) {
+    // 3인칭 모드에서 1인칭 모드로 전환
+    const avatarPOVNode = document.getElementById("avatar-pov-node");
+    const viewingCamera = document.getElementById("viewing-camera");
+    
+    cameraSystem.mode = CAMERA_MODE_FIRST_PERSON;   
+    viewingCamera.removeAttribute("pitch-yaw-rotator");
+    avatarPOVNode.setAttribute("pitch-yaw-rotator", "");
+  
+  }
+}
+
 function UIRootHooksWrapper(props) {
   useAccessibleOutlineStyle();
   const breakpoint = useCssBreakpoints();
@@ -2068,3 +2079,4 @@ UIRootHooksWrapper.propTypes = {
 };
 
 export default UIRootHooksWrapper;
+

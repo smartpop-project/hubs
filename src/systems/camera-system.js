@@ -1,5 +1,5 @@
 import { waitForDOMContentLoaded } from "../utils/async-utils";
-import { childMatch, setMatrixWorld, calculateViewingDistance } from "../utils/three-utils";
+import { childMatch, setMatrixWorld, calculateViewingDistance, getLastWorldQuaternion } from "../utils/three-utils";
 import { paths } from "./userinput/paths";
 import { getBox } from "../utils/auto-box-collider";
 import qsTruthy from "../utils/qs_truthy";
@@ -17,6 +17,27 @@ import {
 } from "../utils/bit-utils";
 import { addComponent, defineQuery, removeComponent } from "bitecs";
 import { INSPECTABLE_FLAGS } from "../bit-systems/inspect-system";
+
+
+function setObjectPositionFromMatrix(object, matrix) {
+  const position = new THREE.Vector3();
+  const scale = new THREE.Vector3();
+
+  // 행렬에서 위치와 스케일을 추출
+  matrix.decompose(position, new THREE.Quaternion(), scale);
+
+  if (object.parent) {
+    // 부모 객체의 위치를 고려하여 상대 위치로 변환
+    const parentPosition = new THREE.Vector3();
+    object.parent.updateMatrixWorld();
+    object.parent.matrixWorld.decompose(parentPosition, new THREE.Quaternion(), new THREE.Vector3());
+    position.sub(parentPosition);
+  }
+
+  position.y += 1.6; // 아바타 키 높이 만큼 위로 올리기
+  object.position.copy(position);
+  object.scale.copy(scale); // 스케일 반영
+}
 
 function getInspectableInHierarchy(eid) {
   let inspectable = findAncestorWithComponent(APP.world, Inspectable, eid);
@@ -97,28 +118,35 @@ const orbit = (function () {
   const dhQ = new THREE.Quaternion();
   const dvQ = new THREE.Quaternion();
   return function orbit(pivot, rig, camera, dh, dv, dz, dt, panY) {
-    pivot.updateMatrices();
-    decompose(pivot.matrixWorld, owp, owq);
+    if (pivot instanceof THREE.Object3D) {
+      pivot.updateMatrixWorld();
+      decompose(pivot.matrixWorld, owp, owq);
+    } else {
+      console.warn("Pivot is not an instance of THREE.Object3D");
+    }
 
-    camera.updateMatrices();
-    decompose(camera.matrixWorld, cwp, cwq);
+    if (camera instanceof THREE.Object3D) {
+      camera.updateMatrixWorld();
+      decompose(camera.matrixWorld, cwp, cwq);
+    } else {
+      console.warn("Camera is not an instance of THREE.Object3D");
+    }
 
     rig.getWorldQuaternion(rwq);
 
-    dhQ.setFromAxisAngle(UP.set(0, 1, 0).applyQuaternion(owq), 0.1 * dh * dt);
+    dhQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.1 * dh * dt);
     targetQuat.copy(cwq).premultiply(dhQ);
     dPos.subVectors(cwp, owp);
     const zoom = 1 - dz * dt;
     const newLength = dPos.length() * zoom;
-    // TODO: These limits should be calculated based on the calculated view distance.
     if (newLength > 0.1 && newLength < 100) {
       dPos.multiplyScalar(zoom);
     }
 
-    dvQ.setFromAxisAngle(RIGHT.set(1, 0, 0).applyQuaternion(targetQuat), 0.1 * dv * dt);
+    dvQ.setFromAxisAngle(new THREE.Vector3(1, 0, 0).applyQuaternion(targetQuat), 0.1 * dv * dt);
     targetQuat.premultiply(dvQ);
     targetPos.addVectors(owp, dPos.applyQuaternion(dhQ).applyQuaternion(dvQ)).add(
-      UP.set(0, 1, 0)
+      new THREE.Vector3(0, 1, 0)
         .multiplyScalar(panY * newLength)
         .applyQuaternion(targetQuat)
     );
@@ -180,6 +208,7 @@ export const CAMERA_MODE_THIRD_PERSON_FAR = 2;
 export const CAMERA_MODE_INSPECT = 3;
 export const CAMERA_MODE_SCENE_PREVIEW = 4;
 export const CAMERA_MODE_THIRD_PERSON_VIEW = 5;
+const THIRD_PERSON_VIEW_DISTANCE = 2;   // 카메라 거리
 
 const NEXT_MODES = {
   [CAMERA_MODE_FIRST_PERSON]: CAMERA_MODE_THIRD_PERSON_NEAR,
@@ -226,7 +255,7 @@ export class CameraSystem {
     this.inspectZoom = 0;
     this.mode = CAMERA_MODE_SCENE_PREVIEW;
     this.snapshot = { audioTransform: new THREE.Matrix4(), matrixWorld: new THREE.Matrix4() };
-    this.audioSourceTargetTransform = new THREE.Matrix4();
+    this.audioSourceTargetTransform = new THREE.Matrix4();    
 
     if (customFOV) {
       this.viewingCamera.fov = customFOV;
@@ -424,6 +453,55 @@ export class CameraSystem {
     camera.layers.mask = this.snapshot.mask;
   }
 
+ 
+  toggleThirdPersonView() {
+    const scene = AFRAME.scenes[0];
+    const cameraSystem = scene.systems["hubs-systems"].cameraSystem;
+    const avatarPOVNode = document.getElementById("avatar-pov-node");
+    const viewingCamera = document.getElementById("viewing-camera");
+
+    if (cameraSystem.mode === CAMERA_MODE_FIRST_PERSON) {
+      // 1인칭 모드에서 3인칭 모드로 전환
+      cameraSystem.mode = CAMERA_MODE_THIRD_PERSON_VIEW;
+
+      // avatar-pov-node에서 pitch-yaw-rotator 제거
+      avatarPOVNode.removeAttribute("pitch-yaw-rotator");
+
+      // viewing-camera에 pitch-yaw-rotator 추가
+      viewingCamera.setAttribute("pitch-yaw-rotator", "");
+    } else if (cameraSystem.mode === CAMERA_MODE_THIRD_PERSON_VIEW) {
+      // 3인칭 모드에서 1인칭 모드로 전환
+      cameraSystem.mode = CAMERA_MODE_FIRST_PERSON;
+
+      // viewing-camera에서 pitch-yaw-rotator 제거
+      viewingCamera.removeAttribute("pitch-yaw-rotator");
+
+      // avatar-pov-node에 pitch-yaw-rotator 추가
+      avatarPOVNode.setAttribute("pitch-yaw-rotator", "");
+
+      // 3인칭 뷰 상태 초기화
+      cameraSystem.horizontalDelta = 0;
+      cameraSystem.verticalDelta = 0;
+    }
+  }
+
+  // 캐릭터가 움직이는지 여부를 살펴보는 메소드
+  isMoving(){  
+    const vector = this.userinput.get(paths.actions.characterAcceleration);
+    //  방향키 이동
+    if (vector && Array.isArray(vector) && vector.length >= 2) {
+        const [right, front] = vector;
+        if (right > 0.001 || front > 0.001){
+          return true;
+        }
+    }
+    // 스냅 이동 
+    if (this.userinput.get(paths.actions.snapRotateLeft) || this.userinput.get(paths.actions.snapRotateRight)) 
+      return true;
+    else
+      return false;
+  }
+
   tick = (function () {
     const tmpMat = new THREE.Matrix4();
     const position = new THREE.Vector3();
@@ -463,6 +541,7 @@ export class CameraSystem {
       this.interaction = this.interaction || scene.systems.interaction;
 
       if (this.userinput.get(paths.actions.startInspecting) && this.mode !== CAMERA_MODE_INSPECT) {
+        this.initialCameraPOV = null;
         if (shouldUseNewLoader()) {
           if (hoveredQuery(APP.world).length) {
             const hovered = hoveredQuery(APP.world)[0];
@@ -508,7 +587,7 @@ export class CameraSystem {
           const vector = userinput.get(paths.actions.characterAcceleration);
           const boost = userinput.get(paths.actions.boost) || false;
       
-          // vector가 정상적으로 정의된 경우에만 처리
+          // vector가 정상적으로 의된 경우에만 처리
           if (vector && Array.isArray(vector) && vector.length >= 2) {
               const [right, front] = vector;
       
@@ -526,8 +605,7 @@ export class CameraSystem {
         if (scene.is("vr-mode")) {
                  /**
            * belivvr custom
-           * VR 환경에서는 3인칭이 필요 없고 머리가 존재하면 안되므로
-           * 머리크기를 줄여서 없는것과 동일시 만들음.
+           * VR 환경에서는 3인칭이 필요 없고 머리크기를 줄여서 없는것과 동일시 만들음.
            * 머리크기를 줄여서 머리가 없으므로 VR환경에서 셀카를 찍으면 목 잘린 사람이 나옴.
            */
           window.myAvatarHead?.scale.set(0, 0, 0);
@@ -598,38 +676,92 @@ export class CameraSystem {
             panY
           );
         }
-      } else if (this.mode === CAMERA_MODE_THIRD_PERSON_VIEW) {
-         /**
-         * belivvr custom
-         * 3인칭 구현 코드
-         */
-        this.viewingCameraRotator.on = false;      
-        /**
-        * belivvr custom
-        * 추후 3인칭 간격 조정을 할 때에 아래의
-        * makeTranslation 의 z 값을 조정하면 된다.
-        */        tmpMat.makeTranslation(0, 0, 2);
+      } else if (this.mode === CAMERA_MODE_THIRD_PERSON_VIEW) {        
+        
+        const avatarPOVNode = document.getElementById("avatar-pov-node");
+        const viewingCamera = document.getElementById("viewing-camera");
+        
         this.avatarRig.object3D.updateMatrices();
-        setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);
-        if (scene.is("vr-mode")) {
-          this.viewingCamera.updateMatrices();
-          setMatrixWorld(this.avatarPOV.object3D, this.viewingCamera.matrixWorld);
-        } else {
-          this.avatarPOV.object3D.updateMatrices();
-          setMatrixWorld(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.multiply(tmpMat));
+        this.avatarPOV.object3D.updateMatrices();
+        // 처음 초기화 및 이동시 아바타 시선 방향 저장 및 카메라의 상대위치 찾기
+        if (this.isMoving()|| this.lastAvatarQuaternion == null || this.lastAvatarQuaternion == undefined){
+          viewingCamera.removeAttribute("pitch-yaw-rotator");
+          avatarPOVNode.setAttribute("pitch-yaw-rotator", "");
+    
+          this.viewingCameraRotator.on = false;                
+          tmpMat.makeTranslation(0, 0, THIRD_PERSON_VIEW_DISTANCE);
+
+            // 아바타의 위치를 기준으로 카메라 위치 설정
+            const offset = new THREE.Vector3(
+              THIRD_PERSON_VIEW_DISTANCE * Math.sin(0) * Math.cos(0),
+              THIRD_PERSON_VIEW_DISTANCE * Math.sin(0),
+              THIRD_PERSON_VIEW_DISTANCE * Math.cos(0) * Math.cos(0)
+            );
+            const offsetMatrix = new THREE.Matrix4().makeTranslation(offset.x, offset.y, offset.z);
+
+         
+          setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);                           
+          setMatrixWorld(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.clone().multiply(offsetMatrix));
+          
+          // 아바타가 움직일 때 시선 방향 저장
+          if (this.lastAvatarQuaternion == null || this.lastAvatarQuaternion == undefined){
+            this.lastAvatarQuaternion = new THREE.Quaternion();
+            this.avatarRig.object3D.getWorldQuaternion(this.lastAvatarQuaternion);
+          }
+          this.hasSetInitialAngles = false;
+
+        } else  {           
+          avatarPOVNode.removeAttribute("pitch-yaw-rotator");
+          viewingCamera.setAttribute("pitch-yaw-rotator", "");
+                   
+          this.avatarPOVRotator.on = true;
+          this.viewingCameraRotator.on = true;
+
+          // 아바타가 멈출 때, 저장된 시선 방향을 기준으로 초기 각도 설정
+          if (!this.hasSetInitialAngles) {
+            const euler = new THREE.Euler().setFromQuaternion(this.lastAvatarQuaternion);
+            this.horizontalDelta = euler.y; // 수평 각도
+            this.verticalDelta = euler.x; // 수직 각도
+            this.hasSetInitialAngles = true; // 초기 각도 설정 완료
+          }          
+        
+           // 사용자 입력에 따라 각도 조정
+          const cameraDelta = this.userinput.get(paths.actions.cameraDelta);
+          if (cameraDelta) {
+            this.horizontalDelta += cameraDelta[0] * 0.1;
+            this.verticalDelta += cameraDelta[1] * 0.1;
+          } else {
+            this.horizontalDelta *= 0.9;
+            this.verticalDelta *= 0.9;
+          }
+          
+          // 카메라의 위치 계산
+         // 아바타의 시선 방향을 기준으로 카메라의 위치 계산
+          const offset = new THREE.Vector3(
+            THIRD_PERSON_VIEW_DISTANCE * Math.sin(this.horizontalDelta) * Math.cos(this.verticalDelta),
+            THIRD_PERSON_VIEW_DISTANCE * Math.sin(this.verticalDelta),
+            THIRD_PERSON_VIEW_DISTANCE * Math.cos(this.horizontalDelta) * Math.cos(this.verticalDelta)
+          ).applyQuaternion(this.lastAvatarQuaternion); // 아바타의 회전을 적용
+          
+   
+          const offsetMatrix = new THREE.Matrix4().makeTranslation(offset.x, offset.y, offset.z);
+
+          
+          setObjectPositionFromMatrix(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.clone().multiply(offsetMatrix));
+          
+          const avatarPosition = new THREE.Vector3();
+          this.avatarRig.object3D.getWorldPosition(avatarPosition);
+          avatarPosition.y += 1.6; 
+          
+          // 카메라가 아바타를 바라보도록 설정
+          this.viewingCamera.lookAt(avatarPosition);
+
         }
-        /**
-         * belivvr custom
-         * 아바타의 위치와 룸 안에서 카메라 위치를 카피해서 동일시 하고
-         * 포지션, 로테이션, 스케일 등등을 포함해서 업데이트 한다.
-         */
-        this.avatarRig.object3D.updateMatrices();
-        this.viewingRig.object3D.matrixWorld.copy(this.avatarRig.object3D.matrixWorld);
-        setMatrixWorld(this.viewingRig.object3D, this.viewingRig.object3D.matrixWorld);
-        this.avatarPOV.object3D.quaternion.copy(this.viewingCamera.quaternion);
-        this.avatarPOV.object3D.matrixNeedsUpdate = true;
-      }
-    };
+      
+      }      
+    }
+
+
   })();
 }
 

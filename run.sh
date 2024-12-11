@@ -5,11 +5,23 @@ cd "$(dirname "$0")"
 
 docker rm -f client hubs-vscode
 
-docker run --log-opt max-size=10m --log-opt max-file=3 -d --restart=always --name client \
--v $(pwd)/certs:/etc/nginx/certs \
--v $(pwd)/nginx.conf:/etc/nginx/nginx.conf \
--p 8080:8080 \
-client
+# 첫 번째 파라미터가 'dev'인 경우 dev 모드로 실행
+if [ "$1" = "dev" ]; then
+  docker run --log-opt max-size=10m --log-opt max-file=3 -d --restart=always --name client \
+  -v $(pwd)/certs:/etc/nginx/certs \
+  -v $(pwd)/nginx.conf:/etc/nginx/nginx.conf \
+  -v $(pwd):/app/client \
+  -p 8080:8080 \
+  client
+else
+  # 기본 실행 모드
+  docker run --log-opt max-size=10m --log-opt max-file=3 -d --restart=always --name client \
+  -v $(pwd)/certs:/etc/nginx/certs \
+  -v $(pwd)/nginx.conf:/etc/nginx/nginx.conf \
+  -v $(pwd):/app/client \
+  -p 8080:8080 \
+  client
+fi
 
 docker logs client
 

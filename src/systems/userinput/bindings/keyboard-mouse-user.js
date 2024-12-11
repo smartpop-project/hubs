@@ -61,7 +61,7 @@ export const keyboardMouseUserBindings = addSetsToBindings({
         d: paths.device.keyboard.key("d")
       },
       dest: { vec2: wasd_vec2 },
-      xform: xforms.wasd_to_vec2
+      xform: xforms.wasd_to_vec2    
     },
     {
       src: {
@@ -110,8 +110,7 @@ export const keyboardMouseUserBindings = addSetsToBindings({
     {
       src: { value: paths.device.keyboard.key("e") },
       dest: { value: paths.actions.snapRotateRight },
-      xform: xforms.rising
-    },
+      xform: xforms.rising    },
     {
       src: { value: paths.device.keyboard.key("b") },
       dest: { value: paths.actions.toggleRecord },
