@@ -706,7 +706,7 @@ export class CameraSystem {
           // 아바타가 움직일 때 시선 방향 저장
           if (this.lastAvatarQuaternion == null || this.lastAvatarQuaternion == undefined){
             this.lastAvatarQuaternion = new THREE.Quaternion();
-            this.avatarRig.object3D.getWorldQuaternion(this.lastAvatarQuaternion);
+            this.avatarPOV.object3D.getWorldQuaternion(this.lastAvatarQuaternion); 
           }
           this.hasSetInitialAngles = false;
 
@@ -719,7 +719,8 @@ export class CameraSystem {
 
           // 아바타가 멈출 때, 저장된 시선 방향을 기준으로 초기 각도 설정
           if (!this.hasSetInitialAngles) {
-            const euler = new THREE.Euler().setFromQuaternion(this.lastAvatarQuaternion);
+            const euler = new THREE.Euler();
+            euler.setFromQuaternion(this.lastAvatarQuaternion);
             this.horizontalDelta = euler.y; // 수평 각도
             this.verticalDelta = euler.x; // 수직 각도
             this.hasSetInitialAngles = true; // 초기 각도 설정 완료
