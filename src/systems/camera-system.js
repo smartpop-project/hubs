@@ -470,7 +470,7 @@ export class CameraSystem {
       // viewing-camera에 pitch-yaw-rotator 추가
       viewingCamera.setAttribute("pitch-yaw-rotator", "");
     } else if (cameraSystem.mode === CAMERA_MODE_THIRD_PERSON_VIEW) {
-      // 3인칭 모드에서 1인칭 모드로 전환
+      // 3인칭 모드에서 1���칭 모드로 전환
       cameraSystem.mode = CAMERA_MODE_FIRST_PERSON;
 
       // viewing-camera에서 pitch-yaw-rotator 제거
@@ -684,7 +684,7 @@ export class CameraSystem {
         this.avatarRig.object3D.updateMatrices();
         this.avatarPOV.object3D.updateMatrices();
         // 처음 초기화 및 이동시 아바타 시선 방향 저장 및 카메라의 상대위치 찾기
-        if (this.isMoving()|| this.lastAvatarQuaternion == null || this.lastAvatarQuaternion == undefined){
+        if (this.isMoving()){
           viewingCamera.removeAttribute("pitch-yaw-rotator");
           avatarPOVNode.setAttribute("pitch-yaw-rotator", "");
     
@@ -703,60 +703,25 @@ export class CameraSystem {
           setMatrixWorld(this.viewingRig.object3D, this.avatarRig.object3D.matrixWorld);                           
           setMatrixWorld(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.clone().multiply(offsetMatrix));
           
-          // 아바타가 움직일 때 시선 방향 저장
-          if (this.lastAvatarQuaternion == null || this.lastAvatarQuaternion == undefined){
-            this.lastAvatarQuaternion = new THREE.Quaternion();
-            this.avatarPOV.object3D.getWorldQuaternion(this.lastAvatarQuaternion); 
-          }
-          this.hasSetInitialAngles = false;
-
+      
         } else  {           
           avatarPOVNode.removeAttribute("pitch-yaw-rotator");
-          viewingCamera.setAttribute("pitch-yaw-rotator", "");
-                   
-          this.avatarPOVRotator.on = true;
-          this.viewingCameraRotator.on = true;
+          viewingCamera.setAttribute("pitch-yaw-rotator", "");        
 
-          // 아바타가 멈출 때, 저장된 시선 방향을 기준으로 초기 각도 설정
-          if (!this.hasSetInitialAngles) {
-            const euler = new THREE.Euler();
-            euler.setFromQuaternion(this.lastAvatarQuaternion);
-            this.horizontalDelta = euler.y; // 수평 각도
-            this.verticalDelta = euler.x; // 수직 각도
-            this.hasSetInitialAngles = true; // 초기 각도 설정 완료
-          }          
-        
-           // 사용자 입력에 따라 각도 조정
-          const cameraDelta = this.userinput.get(paths.actions.cameraDelta);
-          if (cameraDelta) {
-            this.horizontalDelta += cameraDelta[0] * 0.1;
-            this.verticalDelta += cameraDelta[1] * 0.1;
-          } else {
-            this.horizontalDelta *= 0.9;
-            this.verticalDelta *= 0.9;
-          }
-          
-          // 카메라의 위치 계산
-         // 아바타의 시선 방향을 기준으로 카메라의 위치 계산
-          const offset = new THREE.Vector3(
-            THIRD_PERSON_VIEW_DISTANCE * Math.sin(this.horizontalDelta) * Math.cos(this.verticalDelta),
-            THIRD_PERSON_VIEW_DISTANCE * Math.sin(this.verticalDelta),
-            THIRD_PERSON_VIEW_DISTANCE * Math.cos(this.horizontalDelta) * Math.cos(this.verticalDelta)
-          ).applyQuaternion(this.lastAvatarQuaternion); // 아바타의 회전을 적용
-          
-   
-          const offsetMatrix = new THREE.Matrix4().makeTranslation(offset.x, offset.y, offset.z);
+          // 카메라의 회전을 아바타의 회전과 독립적으로 유지
+          const cameraQuaternion = new THREE.Quaternion();
+          viewingCamera.object3D.getWorldQuaternion(cameraQuaternion);
 
-          
-          setObjectPositionFromMatrix(this.viewingCamera, this.avatarPOV.object3D.matrixWorld.clone().multiply(offsetMatrix));
-          
-          const avatarPosition = new THREE.Vector3();
-          this.avatarRig.object3D.getWorldPosition(avatarPosition);
-          avatarPosition.y += 1.6; 
-          
-          // 카메라가 아바타를 바라보도록 설정
-          this.viewingCamera.lookAt(avatarPosition);
+          // 카메라의 회전을 아바타의 회전과 독립적으로 유지
+          const euler = new THREE.Euler().setFromQuaternion(cameraQuaternion, 'YXZ');
+          // euler.z = 0; // roll 제거 부분을 주석 처리하거나 제거
+          cameraQuaternion.setFromEuler(euler);
 
+          // 카메라의 회전을 아바타의 회전과 독립적으로 설정
+          const independentQuaternion = new THREE.Quaternion();
+          independentQuaternion.copy(cameraQuaternion);
+
+          viewingCamera.object3D.quaternion.copy(independentQuaternion);
         }
       
       }      
