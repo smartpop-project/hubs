@@ -1817,7 +1817,7 @@ class UIRoot extends Component {
                       )}
                       {this.state.sidebarId === "side-iframe" && (
                         <IframeSidebar
-                          title={<FormattedMessage id="room-settings-sidebar.iframe" defaultMessage="Room Settings" />}
+                          title={<FormattedMessage id="room-settings-sidebar.iframe" defaultMessage=" " />}
                           beforeTitle={<BackButton onClick={() => this.setSidebar()} />}
                         >
                           <iframe src={this.state.innerFrameURL} style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'transparent', border: 'none'}}></iframe>
