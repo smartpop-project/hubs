@@ -386,7 +386,7 @@
   "room-settings-sidebar.spawn-drawing": "펜",
   "room-settings-sidebar.spawn-emoji": "이모지",
   "room-settings-sidebar.fly": "비행 모드",
-  "room-settings-sidebar.iframe": "Iframe",
+  "room-settings-sidebar.iframe": "",
   "copyable-text-input-field.copy-label": "복사",
   "copyable-text-input-field.copied-label": "복사됨",
   "invite-link-input-field.label": "초대 링크",

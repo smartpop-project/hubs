@@ -732,10 +732,9 @@ module.exports = async (env, argv) => {
           /**
            * belivvr custom
            * .env 추가
-           * CNUMETA_JNU, NCLOUD
+           * CNUMETA_JNU
            */
           CNUMETA_JNU: process.env.CNUMETA_JNU,
-          NCLOUD: process.env.NCLOUD,
           BACKEND_URL: process.env.XRCLOUD_BACKEND_URL || process.env.BACKEND_URL,
           APP_CONFIG: appConfig
         })
