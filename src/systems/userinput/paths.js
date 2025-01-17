@@ -7,6 +7,8 @@ paths.actions.snapRotateLeft = "/actions/snapRotateLeft";
 paths.actions.snapRotateRight = "/actions/snapRotateRight";
 paths.actions.angularVelocity = "/actions/angularVelocity";
 paths.actions.logDebugFrame = "/actions/logDebugFrame";
+// [BELIVVR Custom Feature : Jump Action]
+paths.actions.jump = "/actions/jump";
 paths.actions.logInteractionState = "/actions/logInteractionState";
 paths.actions.debugUserInput = {};
 paths.actions.debugUserInput.describeCurrentMasks = "/actions/debugUserInput/describeCurrentMasks";

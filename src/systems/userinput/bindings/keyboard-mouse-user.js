@@ -474,6 +474,12 @@ export const keyboardMouseUserBindings = addSetsToBindings({
       src: { value: paths.device.keyboard.key("i") },
       dest: { value: paths.actions.startInspectingSelf },
       xform: xforms.rising
+    },
+    {
+      // [BELIVVR Custom Feature : Jump Action]
+      src: { value: paths.device.keyboard.key("j") },
+      dest: { value: paths.actions.jump },
+      xform: xforms.rising 
     }
 
     // Helpful bindings for debugging hands in 2D
