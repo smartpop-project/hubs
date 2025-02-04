@@ -1,14 +1,14 @@
 name: Node.js CI
 
 on:
-push:
-branches: [master]
-pull_request:
-branches: [master]
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
-build:
-runs-on: self-hosted
+  build:
+    runs-on: self-hosted
 
     strategy:
       matrix:
