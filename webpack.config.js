@@ -151,6 +151,7 @@ async function fetchAppConfigAndEnvironmentVars() {
   }
 
   const { host, token } = JSON.parse(fs.readFileSync(".ret.credentials"));
+  console.log("webpack.config host: ", host, token);
 
   const headers = {
     Authorization: `Bearer ${token}`,
