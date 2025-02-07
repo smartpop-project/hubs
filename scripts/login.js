@@ -19,6 +19,7 @@ const ask = q => new Promise(res => rl.question(q, res));
   }
 
   const url = `https://${host}/api/v1/meta`;
+  console.log("url: ", url);
   try {
     const res = await fetch(url);
     const meta = await res.json();
